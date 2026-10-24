@@ -11,8 +11,10 @@
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
+<div class="stars" aria-hidden="true"></div>
 
 <header class="head" data-head>
+  <i class="prog" aria-hidden="true"></i>
   <div class="head-in">
     <a class="brand" href="https://techfest.org/" target="_blank" rel="noopener">
       <svg class="mark" viewBox="0 0 44 44" width="34" height="34" aria-hidden="true" focusable="false">
@@ -36,6 +38,9 @@
     </nav>
 
     <div class="head-act">
+      <button class="sound-btn" type="button" data-sound-toggle aria-pressed="false">
+        <span class="eq" aria-hidden="true"><i></i><i></i><i></i></span><span class="sound-lbl">Ambience</span>
+      </button>
       <button class="motion-btn" type="button" data-motion-toggle aria-pressed="false">
         <span class="dot" aria-hidden="true"></span><span class="motion-lbl">Motion off</span>
       </button>
@@ -60,7 +65,7 @@
 
   <!-- ============ HERO ============ -->
   <section class="hero" id="top" aria-labelledby="hero-h">
-    <div class="hero-bg" aria-hidden="true">
+    <div class="hero-bg" data-par="0.14" aria-hidden="true">
       <img src="assets/img/hero-farside.webp" alt="" width="1600" height="914" fetchpriority="high">
     </div>
     <div class="hero-scrim" aria-hidden="true"></div>
@@ -400,7 +405,7 @@
         <p class="hero-note">These three Pushpak rounds closed for registration before this page was written; the wider competition slate stays open through the zonals.</p>
       </div>
       <div class="feat-visual" aria-hidden="true">
-        <svg viewBox="0 0 320 380" width="100%" height="100%" role="presentation">
+        <svg viewBox="0 0 320 380" width="100%" height="100%" role="presentation" data-par="0.06">
           <defs>
             <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
               <stop offset="0" stop-color="#FFD700" stop-opacity=".9"/><stop offset="1" stop-color="#FFD700" stop-opacity=".05"/>
@@ -511,6 +516,17 @@
     </div>
   </section>
 </main>
+
+<div class="phase-mark" aria-hidden="true">
+  <svg viewBox="0 0 48 48" width="48" height="48">
+    <defs><clipPath id="disc"><circle cx="24" cy="24" r="11.5"/></clipPath></defs>
+    <circle cx="24" cy="24" r="19" fill="none" stroke="#FFD700" stroke-opacity=".22" stroke-width="1" stroke-dasharray="2 5"></circle>
+    <circle cx="24" cy="24" r="11.5" fill="#FFD700"></circle>
+    <g clip-path="url(#disc)"><circle class="cover" cx="24" cy="24" r="12" fill="#0B0B0E"></circle></g>
+    <g class="sat-orbit"><circle class="sat" cx="24" cy="5" r="2.2" fill="#FFD700"></circle></g>
+  </svg>
+  <span>how far in</span>
+</div>
 
 <footer class="foot">
   <div class="wrap foot-grid">

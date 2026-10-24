@@ -19,6 +19,9 @@
       motionBtn.setAttribute('aria-pressed', String(on));
       motionBtn.querySelector('.motion-lbl').textContent = on ? 'Motion on' : 'Motion off';
     }
+    if (!on) {
+      document.querySelectorAll('[data-par]').forEach(function (el) { el.style.removeProperty('--py'); });
+    }
     if (on) { startMarquee(); revealAll(); } else { stopMarquee(); revealAll(); }
   }
 
@@ -35,11 +38,36 @@
     if (!explicit) applyMotion(!e.matches);
   });
 
-  /* ---------- sticky header state ---------- */
+  /* ---------- scroll engine: header state, progress, parallax ---------- */
   var head = document.querySelector('[data-head]');
-  function onScroll() { head.classList.toggle('is-stuck', window.scrollY > 12); }
+  var parallax = Array.prototype.slice.call(document.querySelectorAll('[data-par]'));
+  var moonCover = document.querySelector('.phase-mark .cover');
+  var moonSat = document.querySelector('.phase-mark .sat-orbit');
+
+  function onScroll() {
+    var y = window.scrollY;
+    head.classList.toggle('is-stuck', y > 12);
+
+    var max = document.documentElement.scrollHeight - window.innerHeight;
+    var p = max > 0 ? Math.min(1, Math.max(0, y / max)) : 0;
+    root.style.setProperty('--p', p.toFixed(4));
+    /* attributes, not CSS transforms: SVG child transforms are unreliable read back */
+    if (moonCover) moonCover.setAttribute('cx', (24 + p * 26).toFixed(2));
+    if (moonSat) moonSat.setAttribute('transform', 'rotate(' + (p * 360).toFixed(1) + ' 24 24)');
+
+    if (motionOn) {
+      var mid = window.innerHeight / 2;
+      for (var i = 0; i < parallax.length; i++) {
+        var el = parallax[i];
+        var box = el.getBoundingClientRect();
+        if (box.bottom < -200 || box.top > window.innerHeight + 200) continue;
+        var off = (box.top + box.height / 2 - mid) * parseFloat(el.dataset.par);
+        el.style.setProperty('--py', off.toFixed(1) + 'px');
+      }
+    }
+  }
   window.addEventListener('scroll', onScroll, { passive: true });
-  onScroll();
+  window.addEventListener('resize', onScroll);
 
   /* ---------- mobile nav ---------- */
   var navBtn = document.querySelector('[data-nav-toggle]');
@@ -151,8 +179,97 @@
     target.focus({ preventScroll: true });
   });
 
+  /* ---------- ambient sound (WebAudio, gesture-started, never remembered) ---------- */
+  var soundBtn = document.querySelector('[data-sound-toggle]');
+  var sound = null;
+  var soundOn = false;
+  var LEVEL = 0.055;
+
+  function buildAmbience() {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    var ctx = new AC();
+    var out = ctx.createGain();
+    out.gain.value = 0;
+    out.connect(ctx.destination);
+
+    var lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = 360;
+    lp.Q.value = 0.4;
+    lp.connect(out);
+
+    [[55, 'sine', 0.55], [82.5, 'sine', 0.24], [110, 'triangle', 0.09]].forEach(function (v) {
+      var o = ctx.createOscillator();
+      o.type = v[1];
+      o.frequency.value = v[0];
+      var g = ctx.createGain();
+      g.gain.value = v[2];
+      o.connect(g); g.connect(lp); o.start();
+    });
+
+    // slow sweep across the low-pass so the drone breathes instead of droning flat
+    var lfo = ctx.createOscillator();
+    lfo.frequency.value = 0.045;
+    var lfoAmt = ctx.createGain();
+    lfoAmt.gain.value = 150;
+    lfo.connect(lfoAmt); lfoAmt.connect(lp.frequency); lfo.start();
+
+    // distant crowd wash
+    var len = Math.floor(ctx.sampleRate * 3);
+    var buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    var ch = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) ch[i] = (Math.random() * 2 - 1) * 0.4;
+    var noise = ctx.createBufferSource();
+    noise.buffer = buf;
+    noise.loop = true;
+    var bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.value = 1250;
+    bp.Q.value = 0.6;
+    var nGain = ctx.createGain();
+    nGain.gain.value = 0.09;
+    noise.connect(bp); bp.connect(nGain); nGain.connect(out);
+    noise.start();
+
+    return { ctx: ctx, out: out };
+  }
+
+  function applySound(audible) {
+    if (soundBtn) {
+      soundBtn.setAttribute('aria-pressed', String(!!audible));
+      soundBtn.querySelector('.sound-lbl').textContent = audible ? 'Ambience on' : 'Ambience';
+    }
+    if (!sound) return;
+    var g = sound.out.gain, t = sound.ctx.currentTime;
+    g.cancelScheduledValues(t);
+    g.setValueAtTime(g.value, t);
+    g.linearRampToValueAtTime(audible ? LEVEL : 0, t + (audible ? 1.6 : 0.7));
+    if (audible) sound.ctx.resume();
+  }
+
+  if (soundBtn) {
+    soundBtn.addEventListener('click', function () {
+      if (!sound) {
+        sound = buildAmbience();
+        if (!sound) {
+          soundBtn.disabled = true;
+          soundBtn.querySelector('.sound-lbl').textContent = 'No audio';
+          return;
+        }
+      }
+      soundOn = !soundOn;
+      applySound(soundOn);
+    });
+  }
+  // duck the ambience while the tab is hidden; restore it when the visitor returns
+  document.addEventListener('visibilitychange', function () {
+    if (sound) applySound(!document.hidden && soundOn);
+  });
+
   var yr = document.getElementById('yr');
   if (yr) yr.textContent = String(new Date().getFullYear());
 
   applyMotion(motionOn);
+  onScroll();
 })();
