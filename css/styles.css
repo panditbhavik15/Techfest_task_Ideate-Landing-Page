@@ -106,10 +106,12 @@ html.motion-on .btn:hover{transform:translateY(-2px)}
 html.motion-on .motion-btn[aria-pressed="true"] .m-dot{transform-box:fill-box;transform-origin:5.4px 6.6px;animation:orbit 3.6s linear infinite}
 @keyframes orbit{to{transform:rotate(360deg)}}
 
-.nav-btn{display:none;width:42px;height:38px;border:1px solid var(--line);border-radius:10px;place-items:center;transition:border-color .25s}
-.nav-btn:hover{border-color:rgba(255,215,0,.5)}
-.bars{position:relative;display:block;width:18px;height:1.6px;background:var(--paper);transition:background .2s var(--ease)}
-.bars::before,.bars::after{content:'';position:absolute;left:0;width:18px;height:1.6px;background:var(--paper);transition:transform .32s var(--ease),opacity .2s}
+.nav-btn{position:relative;display:none;align-items:center;justify-content:center;gap:9px;min-width:44px;height:40px;padding:0 12px;border:1px solid var(--line);border-radius:10px;font-size:.64rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--haze);transition:border-color .25s,color .25s}
+.nav-btn:hover,.nav-btn[aria-expanded="true"]{border-color:rgba(255,215,0,.55);color:var(--paper)}
+.nav-btn[aria-expanded="true"]{color:var(--gold)}
+.nav-lbl{flex:none}
+.bars{position:relative;flex:none;display:block;width:18px;height:1.6px;background:currentColor;transition:background .2s var(--ease)}
+.bars::before,.bars::after{content:'';position:absolute;left:0;width:18px;height:1.6px;background:currentColor;transition:transform .32s var(--ease),opacity .2s}
 .bars::before{top:-6px}
 .bars::after{top:6px}
 .nav-btn[aria-expanded="true"] .bars{background:transparent}
@@ -353,7 +355,12 @@ html.motion-on .phase-mark:not(:disabled):hover .up{transform:translateY(-2px)}
 }
 @media (max-width:1080px){
   .nav{display:none}
-  .nav-btn{display:grid}
+  .nav-btn{display:flex}
+}
+@media (max-width:560px){
+  /* icon-only, but the word stays as the accessible name */
+  .nav-btn{padding:0 11px}
+  .nav-lbl{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 }
 @media (max-width:900px){
   .phase-mark{padding:8px 7px 6px;border-radius:12px}
@@ -396,10 +403,9 @@ html.motion-on .phase-mark:not(:disabled):hover .up{transform:translateY(-2px)}
   .glance dd{text-align:left}
 }
 
-/* OS-level reduced motion: nothing animates unless the visitor opts in
-   with the header Motion control (html[data-motion="full"]). */
-@media (prefers-reduced-motion:reduce){
-  html:not([data-motion="full"]) *,html:not([data-motion="full"]) *::before,html:not([data-motion="full"]) *::after{
-    animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important
-  }
-}
+/* OS-level reduced motion is honoured by *not opting in*: every decorative
+   animation and transform lives behind `html.motion-on`, which JavaScript only
+   sets when the visitor turns the header Motion control on (or the OS asks for
+   no preference). A blanket `transition-duration:0!important` rule used to sit
+   here as well — it also froze the functional UI (hamburger, menu panel, hover
+   feedback), which made the controls look dead, so it is gone. */

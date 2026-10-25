@@ -77,7 +77,7 @@
   /* ---------- mobile nav ---------- */
   var navBtn = document.querySelector('[data-nav-toggle]');
   var navPanel = document.getElementById('mobile-nav');
-  var navSr = navBtn && navBtn.querySelector('.sr-only');
+  var navLbl = navBtn && navBtn.querySelector('.nav-lbl');
   var navCloseTimer = 0;
   var navIsOpen = false;
 
@@ -86,7 +86,7 @@
     navIsOpen = open;
     window.clearTimeout(navCloseTimer);
     navBtn.setAttribute('aria-expanded', String(open));
-    if (navSr) navSr.textContent = open ? 'Close menu' : 'Open menu';
+    if (navLbl) navLbl.textContent = open ? 'Close' : 'Menu';
     root.classList.toggle('nav-open', open);
     if (open) {
       navPanel.hidden = false;

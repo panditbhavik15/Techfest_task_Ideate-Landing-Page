@@ -28,9 +28,15 @@ assets/fonts        self-hosted Space Grotesk 400/500/700 latin woff2
 
 ## Motion
 
-Animations are gated behind `html.motion-on`, so nothing moves unless JavaScript opts in.
-The header **Motion** control sets the state and stores it in `localStorage`
+Animations are gated behind `html.motion-on`, so nothing decorative moves unless JavaScript
+opts in. The header **Motion** control sets the state and stores it in `localStorage`
 (`tf-motion`). With no stored choice, the page follows `prefers-reduced-motion`.
+
+Functional feedback — the Menu button turning into a cross, the panel sliding open, border
+and colour changes on hover and focus — is *not* gated, because a control that gives no
+visible response reads as broken. There is deliberately no blanket
+`transition-duration:0!important` rule for reduced motion; it used to flatten those
+micro-interactions along with the decoration, which made the header controls look dead.
 
 ### Scroll behaviour
 
@@ -48,11 +54,14 @@ they follow the user's own scrolling rather than animating on their own.
 
 ### Mobile menu
 
-Below 1080px the inline nav collapses into a hamburger that opens `#mobile-nav`: the panel
-slides down and fades (motion-gated), the page behind it is locked with `html.nav-open`, and
-a long list scrolls inside the panel instead of pushing content off screen. It closes on a
-link tap, on `Escape` (focus returns to the button), and on resize back to desktop width;
-`aria-expanded`, the button's screen-reader label and the `[hidden]` state all follow.
+Below 1080px the inline nav collapses into a **Menu** button — the bars rotate into a cross
+and the word becomes **Close**; below 560px the word is visually hidden but remains the
+accessible name. It opens `#mobile-nav`: the panel slides down and fades, the page behind it
+is locked with `html.nav-open`, and a long list scrolls inside the panel instead of pushing
+content off screen. It closes on a link tap, on `Escape` (focus returns to the button), and on
+resize back to desktop width; `aria-expanded`, the button's label and the `[hidden]` state
+all follow. `index.html` requests the css/js with a `?v=` stamp — bump it if you edit a
+stylesheet or script and the browser keeps serving the old copy.
 
 ### Ambient sound
 
