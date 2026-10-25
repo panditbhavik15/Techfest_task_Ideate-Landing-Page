@@ -118,8 +118,8 @@
   }
 
   /* ---------- tabs, scoped per tablist ----------
-     Two tablists share this page (categories and platform modules), so the
-     roving tabindex and panel switching are wired group by group. */
+     More than one tablist shares this page (categories and platform modules),
+     so the roving tabindex and panel switching are wired group by group. */
   document.querySelectorAll('[role="tablist"]').forEach(function (list) {
     var tabs = Array.prototype.slice.call(list.querySelectorAll('[role="tab"]'));
     if (!tabs.length) return;

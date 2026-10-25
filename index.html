@@ -7,7 +7,7 @@
 <meta name="description" content="Techfest, IIT Bombay — the 30th edition of Asia's largest science and technology festival. Competitions, workshops, lectures, exhibitions and entertainment on the IIT Bombay campus.">
 <meta name="theme-color" content="#0A0A0C">
 <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="css/styles.css?v=13">
+<link rel="stylesheet" href="css/styles.css?v=14">
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -471,6 +471,12 @@
             </span>
             <b>Live day</b><small>Delays · map · results</small>
           </button>
+          <button role="tab" id="tab-os-judge" aria-controls="p-os-judge" aria-selected="false" class="tab" tabindex="-1" data-tab="judge">
+            <span class="tab-i" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M12 3v17M5 8h14M7 8l-3 6h6L7 8Zm10 0-3 6h6l-3-6ZM9 20h6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+            <b>Judging</b><small>Rubric · code runner</small>
+          </button>
         </div>
 
         <div class="panels">
@@ -661,6 +667,89 @@
               </section>
             </div>
           </div>
+
+          <!-- ============ JUDGING ============ -->
+          <div role="tabpanel" id="p-os-judge" aria-labelledby="tab-os-judge" class="panel" tabindex="0" hidden>
+            <div class="panel-top">
+              <h3>Judging: a score sheet, and a runner that does not lie</h3>
+              <p>A rubric only works if every judge is asked the same weighted questions, and an auto-checker only works if it can say &ldquo;this one never stopped&rdquo; instead of hanging the page. Both are here as clickable prototypes.</p>
+            </div>
+
+            <div class="mods">
+              <section class="mod" aria-labelledby="jd-h">
+                <header class="mod-head">
+                  <h4 id="jd-h">Digital judge dashboard</h4>
+                  <p class="mod-tag">weighted rubric · sample entries</p>
+                </header>
+
+                <div class="jd">
+                  <div class="jd-col">
+                    <p class="jd-cap">Assigned to you</p>
+                    <div class="jd-list" role="group" aria-label="Entries assigned to this judge" data-jd-list></div>
+                    <p class="jd-side" data-jd-side></p>
+                  </div>
+
+                  <div class="jd-form" role="group" aria-label="Score sheet for the selected entry" data-jd-form>
+                    <p class="jd-entry" data-jd-entry>—</p>
+                    <fieldset class="rub">
+                      <legend>Mark each criterion out of 10, and set how much it counts</legend>
+                      <div class="rub-rows" data-jd-rubric></div>
+                    </fieldset>
+                    <p class="rub-total">
+                      <span class="rub-num" data-jd-score>0.0</span>
+                      <span class="rub-cap">weighted score</span>
+                      <b class="rub-warn" data-jd-warn hidden></b>
+                    </p>
+                    <label class="fld jd-note">Judge note
+                      <textarea rows="3" maxlength="300" data-jd-note placeholder="What decided this score?"></textarea>
+                    </label>
+                    <label class="chip jd-flag">
+                      <input type="checkbox" data-jd-flag><span>Flag for appeal review</span>
+                    </label>
+                    <div class="mm-foot">
+                      <button class="btn btn-ghost btn-sm" type="button" data-jd-save>Save draft</button>
+                      <button class="btn btn-gold btn-sm" type="button" data-jd-lock>Lock verdict</button>
+                      <button class="btn btn-ghost btn-sm" type="button" data-jd-csv>Export all verdicts</button>
+                    </div>
+                    <p class="mod-live" data-jd-status aria-live="polite"></p>
+                  </div>
+                </div>
+                <p class="mod-note"><b>Needs a backend.</b> A real portal needs judge accounts, conflict-of-interest declarations, a deadline that closes the sheet, an appeal window and an immutable audit trail — locking a verdict is only meaningful if the server refuses the rewrite. Here the four entries, the criteria and the weights are written for this review, and your sheet is saved in this browser only.</p>
+              </section>
+
+              <section class="mod" aria-labelledby="ce-h">
+                <header class="mod-head">
+                  <h4 id="ce-h">Automated code evaluation</h4>
+                  <p class="mod-tag">runs in a worker on this device</p>
+                </header>
+
+                <div class="ce">
+                  <div class="ce-q">
+                    <p class="ce-cap">Sample problem</p>
+                    <p class="ce-task">Return the sum of the even numbers in <code>nums</code>.</p>
+                    <pre class="ce-sig"><code>function sumEven(nums) { … }</code></pre>
+                    <p class="ce-cap">Try a submission</p>
+                    <div class="ce-samples" role="group" aria-label="Sample submissions" data-ce-load></div>
+                    <p class="ce-disc">The six cases are shown with their expected values because this is a review. A live contest would hide them and only score the run.</p>
+                  </div>
+
+                  <div class="ce-run">
+                    <label class="fld ce-code">JavaScript
+                      <textarea rows="8" spellcheck="false" autocomplete="off" data-ce-code></textarea>
+                    </label>
+                    <div class="mm-foot">
+                      <button class="btn btn-gold btn-sm" type="button" data-ce-run>Run the 6 cases</button>
+                      <button class="btn btn-ghost btn-sm" type="button" data-ce-stop hidden>Stop the runner</button>
+                      <p class="ce-sum" data-ce-sum aria-live="polite">Nothing has run yet.</p>
+                    </div>
+                    <ul class="tests" data-ce-tests></ul>
+                    <p class="mod-live" data-ce-status aria-live="polite"></p>
+                  </div>
+                </div>
+                <p class="mod-note"><b>Not a security boundary.</b> This runner puts the code in a Web Worker so a submission that loops forever cannot freeze the page, and it kills the worker after 1.5 seconds per case. That is all it does: a worker has no CPU, memory, network or filesystem limits, so a real evaluator has to run each submission in a container or a seccomp jail with a clock budget, an output cap and a per-team rate limit before it can decide anything.</p>
+              </section>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -845,7 +934,7 @@
   </div>
 </footer>
 
-<script src="js/main.js?v=13"></script>
-<script src="js/platform.js?v=13"></script>
+<script src="js/main.js?v=14"></script>
+<script src="js/platform.js?v=14"></script>
 </body>
 </html>

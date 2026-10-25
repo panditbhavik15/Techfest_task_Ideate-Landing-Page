@@ -951,6 +951,565 @@
     draw();
   }, 250);
 
+  /* ============================================================
+     judging — a weighted rubric sheet and a sandboxed code runner
+     ============================================================ */
+  var JD_KEY = 'tf-judge';
+
+  var CRITERIA = [
+    { k: 'innovation', name: 'Innovation', w: 30 },
+    { k: 'execution', name: 'Execution', w: 30 },
+    { k: 'docs', name: 'Documentation', w: 20 },
+    { k: 'pitch', name: 'Presentation', w: 20 }
+  ];
+
+  /* the same four machines the live boards already rank */
+  var ENTRIES = [
+    { id: 'e1', team: 'Torque & Co', event: 'The Wrecking Ball Challenge',
+      brief: 'Hydraulic arm, four runs, no penalty hits.' },
+    { id: 'e2', team: 'Null Pointer', event: 'Code Auditor',
+      brief: 'Found the injection in the sample service and wrote the patch.' },
+    { id: 'e3', team: 'Ferrous Foxes', event: 'National Probability Challenge',
+      brief: 'Live derivation round against the clock.' },
+    { id: 'e4', team: 'Kitbash', event: 'RoboReach',
+      brief: 'Cable-driven picker, printed parts only.' }
+  ];
+
+  function blankRow() {
+    var marks = {}, weights = {};
+    CRITERIA.forEach(function (c) { marks[c.k] = 6; weights[c.k] = c.w; });
+    return { marks: marks, weights: weights, note: '', flag: false, locked: false, score: null };
+  }
+
+  var judge = { sel: 'e1', rows: {} };
+  ENTRIES.forEach(function (en) { judge.rows[en.id] = blankRow(); });
+  try {
+    var jraw = JSON.parse(localStorage.getItem(JD_KEY));
+    if (jraw && typeof jraw === 'object' && jraw.rows) {
+      if (typeof jraw.sel === 'string') judge.sel = jraw.sel;
+      ENTRIES.forEach(function (en) {
+        var r = jraw.rows[en.id];
+        /* every field is re-checked against the shape: a hand-edited store must
+           not put a non-number into the score maths */
+        if (!r || typeof r !== 'object') return;
+        var row = blankRow();
+        CRITERIA.forEach(function (c) {
+          /* typeof first: isFinite(null) and isFinite('') are both true, and a
+             coerced 0 would quietly re-score a sheet that was never filled */
+          var m = typeof r.marks === 'object' && r.marks ? r.marks[c.k] : null;
+          if (typeof m === 'number' && isFinite(m)) row.marks[c.k] = Math.min(10, Math.max(0, Math.round(m)));
+          var w = typeof r.weights === 'object' && r.weights ? r.weights[c.k] : null;
+          if (typeof w === 'number' && isFinite(w)) row.weights[c.k] = Math.min(100, Math.max(0, Math.round(w)));
+        });
+        row.note = typeof r.note === 'string' ? r.note.slice(0, 300) : '';
+        row.flag = !!r.flag;
+        row.locked = !!r.locked;
+        row.score = typeof r.score === 'number' && isFinite(r.score) ? r.score : null;
+        judge.rows[en.id] = row;
+      });
+    }
+  } catch (e) {}
+  if (!judge.rows[judge.sel]) judge.sel = 'e1';
+
+  function persistJudge() {
+    try { localStorage.setItem(JD_KEY, JSON.stringify(judge)); } catch (e) {}
+  }
+
+  function entryName(id) {
+    for (var i = 0; i < ENTRIES.length; i++) if (ENTRIES[i].id === id) return ENTRIES[i].team;
+    return id;
+  }
+
+  /* the weights are editable, so the denominator is whatever they add up to */
+  function scoreOf(row) {
+    var num = 0, den = 0;
+    CRITERIA.forEach(function (c) {
+      num += (row.marks[c.k] / 10) * row.weights[c.k];
+      den += row.weights[c.k];
+    });
+    return den > 0 ? Math.round((num / den) * 1000) / 10 : 0;
+  }
+  function weightSum(row) {
+    var s = 0;
+    CRITERIA.forEach(function (c) { s += row.weights[c.k]; });
+    return s;
+  }
+
+  var jdListEl = document.querySelector('[data-jd-list]');
+  var jdSideEl = document.querySelector('[data-jd-side]');
+  var jdFormEl = document.querySelector('[data-jd-form]');
+  var jdEntryEl = document.querySelector('[data-jd-entry]');
+  var rubricEl = document.querySelector('[data-jd-rubric]');
+  var scoreEl = document.querySelector('[data-jd-score]');
+  var warnEl = document.querySelector('[data-jd-warn]');
+  var noteEl = document.querySelector('[data-jd-note]');
+  var flagEl = document.querySelector('[data-jd-flag]');
+  var jdStatus = document.querySelector('[data-jd-status]');
+  var jdRows = {};
+
+  function buildEntries() {
+    ENTRIES.forEach(function (en) {
+      var b = node('button', 'jq');
+      b.type = 'button';
+      b.dataset.entry = en.id;
+      b.appendChild(node('b', null, en.team));
+      b.appendChild(node('small', null, en.event));
+      b.appendChild(node('span', 'jq-state', ''));
+      jdListEl.appendChild(b);
+      b.addEventListener('click', function () { selectEntry(en.id); });
+    });
+  }
+
+  function markList() {
+    ENTRIES.forEach(function (en) {
+      var row = judge.rows[en.id];
+      var btn = jdListEl.querySelector('[data-entry="' + en.id + '"]');
+      if (!btn) return;
+      var chip = btn.querySelector('.jq-state');
+      var label = row.locked ? 'Locked' : (row.score !== null ? 'Draft saved' : 'Not scored');
+      chip.className = 'jq-state' + (row.locked ? ' locked' : (row.score !== null ? ' draft' : ''));
+      chip.textContent = row.locked ? 'Locked' : (row.score !== null ? 'Draft' : 'Not scored');
+      /* the three runs of text inside the button would otherwise read as one
+         mashed sentence, so the name is set deliberately */
+      btn.setAttribute('aria-label', en.team + ', ' + en.event + ' — ' + label);
+      btn.setAttribute('aria-pressed', String(judge.sel === en.id));
+    });
+    var saved = 0, locked = 0;
+    ENTRIES.forEach(function (en) {
+      if (judge.rows[en.id].score !== null) saved++;
+      if (judge.rows[en.id].locked) locked++;
+    });
+    jdSideEl.textContent = saved + ' of ' + ENTRIES.length + ' sheets written up, ' + locked + ' locked.';
+  }
+
+  function selectEntry(id) {
+    judge.sel = id;
+    persistJudge();
+    fillForm();
+    markList();
+  }
+
+  function buildRubric() {
+    CRITERIA.forEach(function (c) {
+      var row = node('div', 'ru');
+      var name = node('span', 'ru-name', c.name);
+      name.id = 'ru-n-' + c.k;
+      var range = node('input');
+      range.type = 'range';
+      range.min = '0'; range.max = '10'; range.step = '1';
+      range.value = String(judge.rows[judge.sel].marks[c.k]);
+      range.dataset.k = c.k;
+      range.setAttribute('aria-labelledby', name.id);
+      var mark = node('span', 'ru-mark');
+      mark.dataset.mark = c.k;
+      var ten = node('i', null, '/10');
+      mark.appendChild(document.createTextNode(range.value));
+      mark.appendChild(ten);
+      var cell = node('span', 'ru-wcell');
+      var wIn = node('input', 'ru-w');
+      wIn.type = 'number';
+      wIn.min = '0'; wIn.max = '100'; wIn.step = '5';
+      wIn.value = String(judge.rows[judge.sel].weights[c.k]);
+      wIn.dataset.k = c.k;
+      wIn.setAttribute('aria-label', c.name + ' weight, percent of the sheet');
+      cell.appendChild(wIn);
+      cell.appendChild(node('i', null, '%'));
+      var pts = node('b', 'ru-p', '');
+      pts.dataset.pts = c.k;
+      row.appendChild(name); row.appendChild(range); row.appendChild(mark);
+      row.appendChild(cell); row.appendChild(pts);
+      rubricEl.appendChild(row);
+      range.addEventListener('input', function () { editMark(c.k, range.value, mark); liveScore(); });
+      wIn.addEventListener('input', function () { liveScore(); });
+    });
+  }
+
+  function editMark(k, value, mark) {
+    while (mark.firstChild) mark.removeChild(mark.firstChild);
+    mark.appendChild(document.createTextNode(value));
+    mark.appendChild(node('i', null, '/10'));
+  }
+
+  /* the form is rebuilt from the store whenever the entry changes */
+  function fillForm() {
+    var en = null;
+    for (var i = 0; i < ENTRIES.length; i++) if (ENTRIES[i].id === judge.sel) en = ENTRIES[i];
+    var row = judge.rows[judge.sel];
+    while (jdEntryEl.firstChild) jdEntryEl.removeChild(jdEntryEl.firstChild);
+    jdEntryEl.appendChild(node('b', null, en.team));
+    jdEntryEl.appendChild(document.createTextNode(' — ' + en.event + ' · ' + en.brief));
+    CRITERIA.forEach(function (c) {
+      var range = rubricEl.querySelector('[data-k="' + c.k + '"][type=range]');
+      var wIn = rubricEl.querySelector('input.ru-w[data-k="' + c.k + '"]');
+      range.value = String(row.marks[c.k]);
+      editMark(c.k, String(row.marks[c.k]), rubricEl.querySelector('[data-mark="' + c.k + '"]'));
+      wIn.value = String(row.weights[c.k]);
+    });
+    noteEl.value = row.note;
+    flagEl.checked = row.flag;
+    jdFormEl.classList.toggle('is-locked', row.locked);
+    setControls(!row.locked);
+    lockBtn.textContent = row.locked ? 'Unlock to edit' : 'Lock verdict';
+    liveScore();
+  }
+
+  function setControls(on) {
+    rubricEl.querySelectorAll('input').forEach(function (el) { el.disabled = !on; });
+    noteEl.disabled = !on;
+    flagEl.disabled = !on;
+  }
+
+  function readForm() {
+    var row = judge.rows[judge.sel];
+    CRITERIA.forEach(function (c) {
+      var range = rubricEl.querySelector('[data-k="' + c.k + '"][type=range]');
+      var wIn = rubricEl.querySelector('input.ru-w[data-k="' + c.k + '"]');
+      var m = Number(range.value);
+      row.marks[c.k] = isFinite(m) ? Math.min(10, Math.max(0, m)) : 0;
+      var w = Number(wIn.value);
+      row.weights[c.k] = isFinite(w) ? Math.min(100, Math.max(0, w)) : 0;
+    });
+    row.note = noteEl.value.slice(0, 300);
+    row.flag = flagEl.checked;
+    return row;
+  }
+
+  function liveScore() {
+    var row = readForm();
+    var s = scoreOf(row);
+    scoreEl.textContent = s.toFixed(1);
+    var sum = weightSum(row);
+    if (sum !== 100) {
+      warnEl.hidden = false;
+      warnEl.textContent = 'Weights add to ' + sum + '% — the score is normalised across them.';
+    } else {
+      warnEl.hidden = true;
+    }
+    CRITERIA.forEach(function (c) {
+      var pts = rubricEl.querySelector('[data-pts="' + c.k + '"]');
+      pts.textContent = ((row.marks[c.k] / 10) * row.weights[c.k]).toFixed(1);
+    });
+  }
+
+  var saveBtn = document.querySelector('[data-jd-save]');
+  var lockBtn = document.querySelector('[data-jd-lock]');
+  var csvBtn = document.querySelector('[data-jd-csv]');
+
+  saveBtn.addEventListener('click', function () {
+    var row = readForm();
+    row.score = scoreOf(row);
+    persistJudge();
+    markList();
+    jdStatus.textContent = 'Draft saved for ' + entryName(judge.sel) + ': ' + row.score.toFixed(1) +
+      ' / 100' + (row.flag ? ', flagged for appeal review.' : '.');
+  });
+
+  lockBtn.addEventListener('click', function () {
+    var row = readForm();
+    row.score = scoreOf(row);
+    row.locked = !row.locked;
+    persistJudge();
+    fillForm();
+    markList();
+    jdStatus.textContent = row.locked
+      ? 'Verdict locked for ' + entryName(judge.sel) + ' at ' + row.score.toFixed(1) +
+        ' / 100. A live portal would refuse any further edit; this one lets you back out.'
+      : 'Re-opened ' + entryName(judge.sel) + ' for editing. Nothing is filed until you lock it again.';
+  });
+
+  function cell(v) {
+    var s = String(v === null || v === undefined ? '' : v);
+    return '"' + s.replace(/"/g, '""') + '"';
+  }
+
+  csvBtn.addEventListener('click', function () {
+    var lines = [];
+    var head = ['Team', 'Event', 'Status'];
+    CRITERIA.forEach(function (c) { head.push(c.name + ' mark', c.name + ' weight %'); });
+    head.push('Weighted score', 'Flagged for appeal', 'Judge note');
+    lines.push(head.map(cell).join(','));
+    var n = 0;
+    ENTRIES.forEach(function (en) {
+      var row = judge.rows[en.id];
+      if (row.score === null) return;
+      var out = [en.team, en.event, row.locked ? 'Locked' : 'Draft'];
+      CRITERIA.forEach(function (c) { out.push(row.marks[c.k], row.weights[c.k]); });
+      out.push(row.score.toFixed(1), row.flag ? 'yes' : 'no', row.note);
+      lines.push(out.map(cell).join(','));
+      n++;
+    });
+    if (!n) {
+      jdStatus.textContent = 'Nothing to export yet — save or lock a sheet first.';
+      return;
+    }
+    var url = '';
+    try {
+      var a = node('a');
+      url = URL.createObjectURL(new Blob([lines.join('\r\n')], { type: 'text/csv' }));
+      a.href = url;
+      a.download = 'techfest-judging-sample.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      jdStatus.textContent = 'Wrote ' + n + ' verdict' + (n === 1 ? '' : 's') +
+        ' to techfest-judging-sample.csv — sample columns only, no judge identity is recorded.';
+    } catch (e) {
+      jdStatus.textContent = 'This browser blocked the download, so the CSV could not be written.';
+    }
+    setTimeout(function () { try { URL.revokeObjectURL(url); } catch (e) {} }, 500);
+  });
+
+  /* ============================================================
+     automated code evaluation
+     ============================================================ */
+  var CASES = [
+    { in: [[1, 2, 3, 4]], want: 6, why: 'two even, two odd' },
+    { in: [[2, 4, 6]], want: 12, why: 'every number is even' },
+    { in: [[1, 3]], want: 0, why: 'no even numbers at all' },
+    { in: [[]], want: 0, why: 'the empty array' },
+    { in: [[-2, 4, 7]], want: 2, why: 'a negative even number' },
+    { in: [[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]], want: 30, why: 'one through ten' }
+  ];
+
+  var SAMPLES = [
+    { label: 'Loop that adds evens', code: 'function sumEven(nums) {\n  var total = 0;\n  for (var i = 0; i < nums.length; i++) {\n    if (nums[i] % 2 === 0) total += nums[i];\n  }\n  return total;\n}' },
+    { label: 'Guard against negatives', code: 'function sumEven(nums) {\n  var total = 0;\n  for (var i = 0; i < nums.length; i++) {\n    if (nums[i] > 0 && nums[i] % 2 === 0) total += nums[i];\n  }\n  return total;\n}' },
+    { label: 'Never returns', code: 'function sumEven(nums) {\n  var i = 0;\n  while (i < 1e18) { i = i + nums.length; }\n  return i;\n}' },
+    { label: 'Does not compile', code: 'function sumEven(nums {  return nums.filter(function (n) { return n % 2 === 0; });\n}' }
+  ];
+
+  /* the worker holds nothing but the submitted function: no DOM, no cookies,
+     no storage. It is a watchdog, not a jail, and the note under the module
+     says so. */
+  var WORKER_SRC = [
+    'var fn = null;',
+    'self.onmessage = function (e) {',
+    '  var msg = e.data;',
+    '  if (msg.step === "compile") {',
+    '    try {',
+    '      var made = (new Function("return (" + msg.code + ");"))();',
+    '      if (typeof made !== "function") {',
+    '        fn = null;',
+    '        self.postMessage({ step: "compile", ok: false, error: "the box does not hold a function" });',
+    '        return;',
+    '      }',
+    '      fn = made;',
+    '      self.postMessage({ step: "compile", ok: true });',
+    '    } catch (err) {',
+    '      fn = null;',
+    '      self.postMessage({ step: "compile", ok: false, error: String(err && err.message ? err.message : err) });',
+    '    }',
+    '    return;',
+    '  }',
+    '  if (typeof fn !== "function") { self.postMessage({ step: "case", id: msg.id, error: "no function to call" }); return; }',
+    '  try {',
+    '    var out = fn.apply(null, msg.args);',
+    '    self.postMessage({ step: "case", id: msg.id, out: out });',
+    '  } catch (err2) {',
+    '    self.postMessage({ step: "case", id: msg.id, error: String(err2 && err2.message ? err2.message : err2) });',
+    '  }',
+    '};'
+  ].join('\n');
+
+  var CASE_MS = 1500;
+
+  var codeEl = document.querySelector('[data-ce-code]');
+  var loadEl = document.querySelector('[data-ce-load]');
+  var runBtn = document.querySelector('[data-ce-run]');
+  var stopBtn = document.querySelector('[data-ce-stop]');
+  var sumEl = document.querySelector('[data-ce-sum]');
+  var testsEl = document.querySelector('[data-ce-tests]');
+  var ceStatus = document.querySelector('[data-ce-status]');
+
+  var worker = null, workerUrl = '', watchdog = null, ceRunning = false, cePass = 0, ceRowEls = [];
+
+  function argText(c) {
+    return 'sumEven([' + c.in[0].join(', ') + '])';
+  }
+  function show(v) {
+    if (v === undefined) return 'undefined';
+    if (v === null) return 'null';
+    if (typeof v === 'number') return String(v);
+    if (typeof v === 'boolean' || typeof v === 'string') return JSON.stringify(v);
+    return 'an object (' + Object.prototype.toString.call(v) + ')';
+  }
+
+  function buildTests() {
+    CASES.forEach(function (c) {
+      var li = node('li', 'tu is-wait');
+      var name = node('p', 'tu-name', c.why);
+      var io = node('p', 'tu-io');
+      io.dataset.io = String(testsEl.childElementCount);
+      io.appendChild(document.createTextNode(argText(c) + ' '));
+      io.appendChild(node('b', null, 'expected ' + show(c.want)));
+      var chip = node('span', 'tu-chip', 'queued');
+      li.appendChild(name); li.appendChild(io); li.appendChild(chip);
+      testsEl.appendChild(li);
+    });
+    ceRowEls = testsEl.querySelectorAll('.tu');
+  }
+
+  function setRow(i, state, detail) {
+    var li = ceRowEls[i];
+    if (!li) return;
+    li.className = 'tu';
+    var chip = li.querySelector('.tu-chip');
+    var io = li.querySelector('.tu-io');
+    var c = CASES[i];
+    io.textContent = argText(c) + ' ';
+    io.appendChild(node('b', null, 'expected ' + show(c.want)));
+    if (detail) {
+      io.appendChild(document.createTextNode(' · '));
+      io.appendChild(node('b', null, detail));
+    }
+    if (state === 'pass') { chip.className = 'tu-chip pass'; chip.textContent = '✓ Pass'; }
+    else if (state === 'fail') { chip.className = 'tu-chip fail'; chip.textContent = '✕ Fail'; }
+    else if (state === 'time') { chip.className = 'tu-chip time'; chip.textContent = '⏱ Over 1.5 s'; }
+    else if (state === 'wait') { li.className = 'tu is-wait'; chip.className = 'tu-chip'; chip.textContent = 'queued'; }
+    else { chip.className = 'tu-chip'; chip.textContent = 'not run'; }
+  }
+
+  function stopWorker() {
+    if (watchdog) { clearTimeout(watchdog); watchdog = null; }
+    if (worker) { try { worker.terminate(); } catch (e) {} worker = null; }
+    if (workerUrl) { try { URL.revokeObjectURL(workerUrl); } catch (e) {} workerUrl = ''; }
+  }
+
+  function setRunning(on) {
+    ceRunning = on;
+    runBtn.hidden = on;
+    stopBtn.hidden = !on;
+    codeEl.disabled = on;
+    loadEl.querySelectorAll('button').forEach(function (b) { b.disabled = on; });
+  }
+
+  function finishRun(msg) {
+    stopWorker();
+    setRunning(false);
+    if (msg) sumEl.textContent = msg;
+  }
+
+  function runCase(i) {
+    if (!worker) return;
+    var c = CASES[i];
+    setRow(i, 'wait', null);
+    watchdog = setTimeout(function () {
+      watchdog = null;
+      setRow(i, 'time', null);
+      for (var k = i + 1; k < CASES.length; k++) setRow(k, null, 'worker stopped');
+      finishRun('Cut off after 1.5 s on ' + argText(c) + ' — the worker was terminated' +
+        (cePass ? ', with ' + cePass + ' of the earlier cases green.' : ' before any case came back.'));
+      ceStatus.textContent = 'The submission never returned, so the worker was terminated and the rest of the sheet was marked as not run.';
+    }, CASE_MS);
+    try {
+      worker.postMessage({ step: 'case', id: i, args: [c.in[0].slice()] });
+    } catch (e) {
+      if (watchdog) { clearTimeout(watchdog); watchdog = null; }
+      setRow(i, 'fail', 'could not send the case');
+      finishRun('The runner could not be reached on this device.');
+    }
+  }
+
+  function nextCase(i) {
+    if (i + 1 < CASES.length) runCase(i + 1);
+    else {
+      var line = cePass + ' of ' + CASES.length + ' cases passed.';
+      finishRun(line);
+      ceStatus.textContent = cePass === CASES.length
+        ? 'All six green. A live evaluator would still cap memory, time and output before it filed a score.'
+        : (CASES.length - cePass) + ' case' + (CASES.length - cePass === 1 ? '' : 's') + ' did not agree with the expected value.';
+    }
+  }
+
+  function startRun() {
+    var code = codeEl.value;
+    if (!/\S/.test(code)) { ceStatus.textContent = 'The answer box is empty — load a sample or write a function.'; return; }
+    if (typeof Worker !== 'function' || typeof Blob !== 'function' || !URL || !URL.createObjectURL) {
+      ceStatus.textContent = 'The sandboxed runner is not available in this browsing context, so nothing was executed.';
+      return;
+    }
+    stopWorker();
+    cePass = 0;
+    for (var i = 0; i < CASES.length; i++) setRow(i, 'wait', null);
+    setRunning(true);
+    sumEl.textContent = 'Running in a worker on this device…';
+    ceStatus.textContent = '';
+    try {
+      workerUrl = URL.createObjectURL(new Blob([WORKER_SRC], { type: 'text/javascript' }));
+      worker = new Worker(workerUrl);
+    } catch (e) {
+      stopWorker();
+      setRunning(false);
+      sumEl.textContent = 'Nothing has run yet.';
+      ceStatus.textContent = 'The browser refused to start a worker here, so the code was not executed.';
+      return;
+    }
+    worker.onmessage = function (e) {
+      var msg = e.data;
+      if (!msg) return;
+      if (msg.step === 'compile') {
+        if (watchdog) { clearTimeout(watchdog); watchdog = null; }
+        if (!msg.ok) {
+          for (var k = 0; k < CASES.length; k++) setRow(k, 'fail', msg.error || 'did not compile');
+          finishRun('Rejected before the first case: ' + (msg.error || 'unknown syntax error'));
+          ceStatus.textContent = 'A real checker files this as a compile error and scores nothing.';
+          return;
+        }
+        runCase(0);
+        return;
+      }
+      if (msg.step !== 'case' || !watchdog) return;
+      clearTimeout(watchdog); watchdog = null;
+      var c = CASES[msg.id];
+      if (msg.error) setRow(msg.id, 'fail', 'threw ' + msg.error);
+      else {
+        var ok = typeof msg.out === 'number' ? msg.out === c.want : show(msg.out) === show(c.want);
+        if (ok) { cePass++; setRow(msg.id, 'pass', 'got ' + show(msg.out)); }
+        else setRow(msg.id, 'fail', 'got ' + show(msg.out));
+      }
+      sumEl.textContent = cePass + ' of ' + CASES.length + ' passed so far.';
+      nextCase(msg.id);
+    };
+    worker.onerror = function () {
+      finishRun('The runner stopped unexpectedly.');
+      ceStatus.textContent = 'The worker raised an error the prototype could not read — that is exactly why a live evaluator needs its own logs.';
+    };
+    watchdog = setTimeout(function () {
+      watchdog = null;
+      finishRun('The submission did not compile within 1.5 s, so it was dropped.');
+    }, CASE_MS);
+    try {
+      worker.postMessage({ step: 'compile', code: code });
+    } catch (e) {
+      finishRun('The runner could not be reached on this device.');
+    }
+  }
+
+  function buildSamples() {
+    SAMPLES.forEach(function (s) {
+      var b = node('button', 'filt');
+      b.type = 'button';
+      b.textContent = s.label;
+      loadEl.appendChild(b);
+      b.addEventListener('click', function () {
+        codeEl.value = s.code;
+        for (var i = 0; i < CASES.length; i++) setRow(i, 'wait', null);
+        sumEl.textContent = 'Loaded "' + s.label + '". Run the 6 cases.';
+        ceStatus.textContent = '';
+      });
+    });
+  }
+
+  runBtn.addEventListener('click', startRun);
+  stopBtn.addEventListener('click', function () {
+    var done = cePass;
+    for (var i = 0; i < ceRowEls.length; i++) {
+      if (/queued|wait/.test(ceRowEls[i].querySelector('.tu-chip').textContent)) setRow(i, null, 'stopped by you');
+    }
+    finishRun('Stopped by you after ' + done + ' pass' + (done === 1 ? '' : 'es') + '.');
+    ceStatus.textContent = 'The worker was terminated, so nothing left the page. Earlier results are still on the sheet.';
+  });
+
   /* ---------- boot ---------- */
   buildControls();
   buildFilters();
@@ -966,6 +1525,13 @@
   drawMap();
   buildBoard();
   buildBracket();
+
+  buildEntries();
+  buildRubric();
+  fillForm();
+  markList();
+  buildTests();
+  buildSamples();
 
   qEl.addEventListener('input', function () {
     mapQuery = qEl.value.trim().toLowerCase();
