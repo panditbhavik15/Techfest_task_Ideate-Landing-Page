@@ -43,6 +43,7 @@
   var parallax = Array.prototype.slice.call(document.querySelectorAll('[data-par]'));
   var moonCover = document.querySelector('.phase-mark .cover');
   var moonSat = document.querySelector('.phase-mark .sat-orbit');
+  var topBtn = document.querySelector('[data-to-top]');
 
   function onScroll() {
     var y = window.scrollY;
@@ -54,6 +55,10 @@
     /* attributes, not CSS transforms: SVG child transforms are unreliable read back */
     if (moonCover) moonCover.setAttribute('cx', (24 + p * 26).toFixed(2));
     if (moonSat) moonSat.setAttribute('transform', 'rotate(' + (p * 360).toFixed(1) + ' 24 24)');
+    if (topBtn) {
+      topBtn.classList.toggle('is-live', y > window.innerHeight * 0.45);
+      topBtn.disabled = y < 4;
+    }
 
     if (motionOn) {
       var mid = window.innerHeight / 2;
@@ -72,24 +77,41 @@
   /* ---------- mobile nav ---------- */
   var navBtn = document.querySelector('[data-nav-toggle]');
   var navPanel = document.getElementById('mobile-nav');
+  var navSr = navBtn && navBtn.querySelector('.sr-only');
+  var navCloseTimer = 0;
+  var navIsOpen = false;
+
+  function setNav(open, returnFocus) {
+    if (!navBtn || !navPanel || open === navIsOpen) return;
+    navIsOpen = open;
+    window.clearTimeout(navCloseTimer);
+    navBtn.setAttribute('aria-expanded', String(open));
+    if (navSr) navSr.textContent = open ? 'Close menu' : 'Open menu';
+    root.classList.toggle('nav-open', open);
+    if (open) {
+      navPanel.hidden = false;
+      void navPanel.offsetHeight; // commit the closed style so the slide can run
+      navPanel.classList.add('is-open');
+    } else {
+      navPanel.classList.remove('is-open');
+      // keep it in the a11y tree until the collapse finishes, then hide it
+      navCloseTimer = window.setTimeout(function () {
+        if (!navIsOpen) navPanel.hidden = true;
+      }, 320);
+      if (returnFocus) navBtn.focus();
+    }
+  }
+
   if (navBtn && navPanel) {
-    navBtn.addEventListener('click', function () {
-      var open = navBtn.getAttribute('aria-expanded') === 'true';
-      navBtn.setAttribute('aria-expanded', String(!open));
-      navPanel.hidden = open;
-    });
+    navBtn.addEventListener('click', function () { setNav(!navIsOpen); });
     navPanel.addEventListener('click', function (e) {
-      if (e.target.closest('a')) {
-        navBtn.setAttribute('aria-expanded', 'false');
-        navPanel.hidden = true;
-      }
+      if (e.target.closest('a')) setNav(false);
     });
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && !navPanel.hidden) {
-        navPanel.hidden = true;
-        navBtn.setAttribute('aria-expanded', 'false');
-        navBtn.focus();
-      }
+      if (e.key === 'Escape') setNav(false, true);
+    });
+    window.addEventListener('resize', function () {
+      if (window.innerWidth > 1080) setNav(false);
     });
   }
 
@@ -266,6 +288,19 @@
   document.addEventListener('visibilitychange', function () {
     if (sound) applySound(!document.hidden && soundOn);
   });
+
+  /* ---------- back to top ---------- */
+  if (topBtn) {
+    topBtn.addEventListener('click', function () {
+      setNav(false);
+      window.scrollTo({ top: 0, behavior: motionOn ? 'smooth' : 'auto' });
+      var hero = document.getElementById('top');
+      if (hero) {
+        hero.setAttribute('tabindex', '-1');
+        hero.focus({ preventScroll: true });
+      }
+    });
+  }
 
   var yr = document.getElementById('yr');
   if (yr) yr.textContent = String(new Date().getFullYear());

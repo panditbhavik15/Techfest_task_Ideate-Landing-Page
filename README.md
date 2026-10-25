@@ -38,11 +38,21 @@ One scroll handler publishes a `--p` progress value (0 → 1) on `<html>` and dr
 
 - the gold progress line under the header,
 - the fixed **moon-phase badge** bottom-right — the moon waxes and its satellite orbits as
-  you descend, reset to new moon at the top (set via SVG attributes, not CSS transforms),
+  you descend, reset to new moon at the top (set via SVG attributes, not CSS transforms).
+  Once you are past ~45% of the viewport it fades in as a real **Back to top** button; it is
+  disabled while you are already at the top and returns focus to the hero when used,
 - parallax on the hero artwork and the Pushpak diagram (`data-par` speed multipliers).
 
 Parallax is skipped when motion is off; the progress line and moon still track scroll, since
 they follow the user's own scrolling rather than animating on their own.
+
+### Mobile menu
+
+Below 1080px the inline nav collapses into a hamburger that opens `#mobile-nav`: the panel
+slides down and fades (motion-gated), the page behind it is locked with `html.nav-open`, and
+a long list scrolls inside the panel instead of pushing content off screen. It closes on a
+link tap, on `Escape` (focus returns to the button), and on resize back to desktop width;
+`aria-expanded`, the button's screen-reader label and the `[hidden]` state all follow.
 
 ### Ambient sound
 
