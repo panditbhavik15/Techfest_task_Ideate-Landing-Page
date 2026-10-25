@@ -7,7 +7,7 @@
 <meta name="description" content="Techfest, IIT Bombay — the 30th edition of Asia's largest science and technology festival. Competitions, workshops, lectures, exhibitions and entertainment on the IIT Bombay campus.">
 <meta name="theme-color" content="#0A0A0C">
 <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="css/styles.css?v=15">
+<link rel="stylesheet" href="css/styles.css?v=16">
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -483,6 +483,12 @@
             </span>
             <b>Engage</b><small>Treasure hunt · network</small>
           </button>
+          <button role="tab" id="tab-os-pay" aria-controls="p-os-pay" aria-selected="false" class="tab" tabindex="-1" data-tab="pay">
+            <span class="tab-i" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><rect x="2.6" y="6.4" width="18.8" height="11.2" rx="2.4" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="2.7" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M5.6 9.4v5.2M18.4 9.4v5.2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            </span>
+            <b>Payouts</b><small>Prize trail · claim lookup</small>
+          </button>
         </div>
 
         <div class="panels">
@@ -838,6 +844,55 @@
               </section>
             </div>
           </div>
+
+          <!-- ============ PAYOUTS ============ -->
+          <div role="tabpanel" id="p-os-pay" aria-labelledby="tab-os-pay" class="panel" tabindex="0" hidden>
+            <div class="panel-top">
+              <h3>Payouts: the question every winner asks afterwards</h3>
+              <p>A prize that has not landed is a support ticket with a team name on it. This is the ledger an accounts desk reads from, stage by stage, and the lookup a winner can run without writing to anyone.</p>
+            </div>
+
+            <div class="mods">
+              <section class="mod" aria-labelledby="pay-h">
+                <header class="mod-head">
+                  <h4 id="pay-h">Automated prize payout tracker</h4>
+                  <p class="mod-tag">sample ledger · seven claims</p>
+                </header>
+
+                <div class="pay-tools">
+                  <div class="filters pay-filters" role="group" aria-label="Screen the ledger by stage" data-pay-filters></div>
+                  <label class="fld pay-order">Order
+                    <select data-pay-order>
+                      <option value="age">Oldest claim first</option>
+                      <option value="new">Latest movement first</option>
+                      <option value="amt">Largest amount first</option>
+                    </select>
+                  </label>
+                </div>
+                <p class="pay-sum" data-pay-sum></p>
+                <p class="pay-count" data-pay-count aria-live="polite"></p>
+                <ul class="pay-list" data-pay-list></ul>
+                <p class="mod-note"><b>Needs a backend.</b> Money movement cannot live in a page: a real tracker reads from the finance system that owns the bank file, and every stage here would be an event written by that system &mdash; with the winner&rsquo;s payout instrument chosen after KYC, not before. The seven claims, their stages and every figure in this table are invented for the review; prize amounts elsewhere on this page are still marked as placeholders.</p>
+              </section>
+
+              <section class="mod" aria-labelledby="claim-h">
+                <header class="mod-head">
+                  <h4 id="claim-h">Claim reference lookup</h4>
+                  <p class="mod-tag">reads the sample ledger</p>
+                </header>
+
+                <div class="claim">
+                  <label class="fld claim-in">Reference from your claim mail
+                    <input type="text" maxlength="20" data-claim-q placeholder="TF26-RW-118" autocomplete="off">
+                  </label>
+                  <button class="btn btn-gold btn-sm" type="button" data-claim-go>Find the claim</button>
+                </div>
+                <p class="mod-live" data-claim-status aria-live="polite"></p>
+                <div class="claim-out" data-claim-out hidden></div>
+                <p class="mod-note"><b>Needs a backend.</b> A reference number is not a secret, so a live lookup has to sit behind the login the claim was filed with &mdash; otherwise anyone who guesses a reference reads out someone else&rsquo;s bank status. Here the search is open on purpose so you can test it, and it only ever reads the seven invented rows above.</p>
+              </section>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -1022,7 +1077,7 @@
   </div>
 </footer>
 
-<script src="js/main.js?v=15"></script>
-<script src="js/platform.js?v=15"></script>
+<script src="js/main.js?v=16"></script>
+<script src="js/platform.js?v=16"></script>
 </body>
 </html>

@@ -746,6 +746,44 @@ html.motion-on .pin.is-live::after{animation:blip 1.6s ease-in-out infinite}
 .net-chip button:hover{background:var(--gold);color:#141200}
 .net-none{font-size:.8rem;color:var(--haze-2)}
 
+/* ---------- post-event: prize payout ledger ---------- */
+.pay-tools{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,232px);gap:14px;align-items:start;margin-bottom:14px}
+.pay-filters{margin-bottom:0}
+.pay-order{min-width:0}
+.pay-sum{margin-bottom:14px;font-size:.86rem;line-height:1.55;color:var(--paper)}
+.pay-sum b{color:var(--gold);font-weight:700}
+.pay-count{margin-bottom:12px;font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--haze-2)}
+.pay-list{display:grid;gap:9px}
+.pay{display:grid;gap:8px;padding:14px 15px;border:1px solid var(--line);border-radius:12px;background:rgba(12,13,18,.62)}
+.pay.is-sel{border-color:rgba(255,215,0,.6);background:linear-gradient(140deg,rgba(255,215,0,.09),rgba(12,13,18,.8))}
+.pay.is-hold{border-color:rgba(233,190,44,.55)}
+.pay-top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 14px}
+.pay-ref{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.9rem;letter-spacing:.08em;color:var(--paper)}
+.pay-stage{flex:none;display:inline-flex;align-items:center;min-height:24px;padding:3px 10px;border-radius:999px;font-size:.64rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--haze-2);border:1px solid var(--edge)}
+.pay-stage.now{background:var(--gold-dim);border-color:rgba(255,215,0,.55);color:var(--gold)}
+.pay-stage.done{background:var(--gold);border-color:var(--gold);color:#141200}
+.pay-stage.hold{border-color:var(--gold-2);color:var(--gold-2)}
+.pay-who{font-size:.9rem;line-height:1.4;color:var(--paper)}
+.pay-who span{color:var(--haze-2)}
+.pay-amt{font-size:.78rem;line-height:1.5;color:var(--haze)}
+.pay-amt b{color:var(--gold);font-weight:700;font-variant-numeric:tabular-nums}
+.pay-hold{font-size:.8rem;line-height:1.55;color:var(--gold-2)}
+.pay-more{align-self:start;justify-self:start;margin-top:2px}
+.pay-trail{display:grid;gap:0;margin:2px 0 0;padding:0;border-top:1px solid var(--line-2)}
+.pay-trail div{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:12px;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--line-2)}
+.pay-trail dt{font-size:.82rem;color:var(--haze)}
+.pay-trail dd{margin:0;font-size:.78rem;color:var(--haze-2);font-variant-numeric:tabular-nums;white-space:nowrap}
+.pay-trail dd.touched{color:var(--paper)}
+/* ---------- post-event: claim reference lookup ---------- */
+.claim{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+.claim-in{flex:1 1 240px;min-width:0}
+.claim-in input{letter-spacing:.12em;text-transform:uppercase}
+.claim-out{margin-top:14px;padding:15px;border:1px solid rgba(255,215,0,.4);border-radius:12px;background:rgba(255,215,0,.04)}
+.claim-h{font-size:.64rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:9px}
+.claim-row{display:grid;gap:4px;margin-bottom:12px}
+.claim-row b{font-size:1.02rem;letter-spacing:-.01em;color:var(--paper)}
+.claim-row span{font-size:.82rem;color:var(--haze)}
+
 /* ============================================================
    responsive
    ============================================================ */
@@ -794,7 +832,11 @@ html.motion-on .pin.is-live::after{animation:blip 1.6s ease-in-out infinite}
   .ru-name{flex:1 1 100%}
   .ru input[type=range]{flex:1 1 100%;width:100%;max-width:none}
   .ru-p{margin-left:auto}
-  .hunt,.net-tools{grid-template-columns:minmax(0,1fr)}
+  .hunt,.net-tools,.pay-tools{grid-template-columns:minmax(0,1fr)}
+  /* a trail row is a stage name plus two numbers: drop to two tracks and let
+     the day count sit under the stage rather than crushing the date */
+  .pay-trail div{grid-template-columns:minmax(0,1fr) auto}
+  .pay-trail div > dd:nth-of-type(2){justify-self:end}
   .clue-in{flex:1 1 100%}
   .clue-form .btn{flex:1 1 100%;justify-content:center}
 }

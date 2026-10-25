@@ -1925,6 +1925,299 @@
     netStatus.textContent = 'List cleared.';
   });
 
+  /* ============================================================
+     post-event: prize payout ledger and claim reference lookup
+     ============================================================ */
+  var PAY_KEY = 'tf-pay';
+  var DAY_MS = 86400000;
+
+  /* A row reaches stage N on day at[N-1] of its run, so two entries in `at`
+     means it is sitting at stage 2. `age` is days since the claim was filed:
+     every date in the trail is derived from the viewer's own clock, so the
+     demo never shows a record that looks like it was never updated. */
+  var STAGES = ['Claim filed', 'Winner verified', 'Finance review', 'Bank file sent', 'Credited'];
+  var SHORT = ['Filed', 'Verified', 'Finance', 'Bank file', 'Credited'];
+  var LEDGER = [
+    { ref: 'TF26-WB-118', event: 'The Wrecking Ball Challenge', team: 'Torque & Co', amt: 60000, age: 15, at: [1, 4, 8, 9] },
+    { ref: 'TF26-RR-042', event: 'RoboReach', team: 'Kitbash', amt: 35000, age: 13, at: [2, 5, 9, 10] },
+    { ref: 'TF26-CA-117', event: 'Code Auditor', team: 'Null Pointer', amt: 50000, age: 10, at: [1, 3, 5] },
+    { ref: 'TF26-NP-233', event: 'National Probability Challenge', team: 'Ferrous Foxes', amt: 45000, age: 7, at: [2] },
+    { ref: 'TF26-RR-051', event: 'RoboReach', team: 'Circuit Saints', amt: 20000, age: 2, at: [] },
+    { ref: 'TF26-WB-090', event: 'The Wrecking Ball Challenge', team: 'Piston Halo', amt: 30000, age: 22, at: [2, 5],
+      hold: 'The bank statement is in a name that is not on the winning roster. The desk wants a countersigned NOC from the college bursar before the file goes out.' },
+    { ref: 'TF26-CA-160', event: 'Code Auditor', team: 'Segfault Syndicate', amt: 25000, age: 9, at: [1, 3],
+      hold: 'The amount on the claim mail is not the amount on the sheet the event lead signed, so it is back with that desk for a reissue.' }
+  ];
+  var PAY_FILTERS = ['All'].concat(SHORT).concat(['On hold']);
+  var ORDER_LABEL = { age: 'oldest filed first', new: 'latest movement first', amt: 'largest amount first' };
+
+  /* sel is only the row the lookup jumped to, so it is not stored */
+  var pay = { filt: 'All', order: 'age', open: {}, sel: '' };
+  try {
+    var savedPay = JSON.parse(localStorage.getItem(PAY_KEY));
+    if (savedPay && typeof savedPay === 'object') {
+      if (PAY_FILTERS.indexOf(savedPay.filt) > -1) pay.filt = savedPay.filt;
+      if (['age', 'new', 'amt'].indexOf(savedPay.order) > -1) pay.order = savedPay.order;
+      if (savedPay.open && typeof savedPay.open === 'object') {
+        LEDGER.forEach(function (r) { if (savedPay.open[r.ref] === true) pay.open[r.ref] = true; });
+      }
+    }
+  } catch (e) {}
+
+  var paySumEl = document.querySelector('[data-pay-sum]');
+  var payCountEl = document.querySelector('[data-pay-count]');
+  var payFiltersEl = document.querySelector('[data-pay-filters]');
+  var payListEl = document.querySelector('[data-pay-list]');
+  var payOrderEl = document.querySelector('[data-pay-order]');
+  var claimQEl = document.querySelector('[data-claim-q]');
+  var claimStatusEl = document.querySelector('[data-claim-status]');
+  var claimOutEl = document.querySelector('[data-claim-out]');
+
+  function persistPay() {
+    try { localStorage.setItem(PAY_KEY, JSON.stringify({ filt: pay.filt, order: pay.order, open: pay.open })); } catch (e) {}
+  }
+
+  function stageOf(r) { return r.at.length; }
+  function lastDay(r) { return r.at.length ? r.at[r.at.length - 1] : 0; }
+  function filedTs(r) { return Date.now() - r.age * DAY_MS; }
+  function days(n) { return n === 1 ? '1 day' : n + ' days'; }
+  /* rupee grouping done by hand: a locale call would render 60,000 or 60.000
+     depending on the machine, and this is a money figure */
+  function money(n) { return '\u20B9' + String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+  var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function stamp(ts) {
+    var d = new Date(ts);
+    return d.getDate() + ' ' + MON[d.getMonth()] + ' ' + d.getFullYear();
+  }
+
+  function matchPay(r) {
+    if (pay.filt === 'All') return true;
+    if (pay.filt === 'On hold') return !!r.hold;
+    for (var i = 0; i < SHORT.length; i++) if (SHORT[i] === pay.filt) return stageOf(r) === i;
+    return true;
+  }
+
+  function comparePay(a, b) {
+    if (pay.order === 'amt') return b.amt - a.amt;
+    if (pay.order === 'new') return (a.age - lastDay(a)) - (b.age - lastDay(b));
+    return b.age - a.age;
+  }
+
+  function agoLine(r) {
+    var st = stageOf(r);
+    var head = 'filed ' + days(r.age) + ' ago';
+    if (st === 4) return head + ' \u00b7 money landed on day ' + r.at[3];
+    if (!st) return head + ' \u00b7 nothing has moved on it yet';
+    var line = head + ' \u00b7 last moved on day ' + lastDay(r);
+    var idle = r.age - lastDay(r);
+    if (idle >= 4) line += ', ' + days(idle) + ' with no movement since';
+    return line;
+  }
+
+  function paySum() {
+    paySumEl.textContent = '';
+    var credited = 0, onHold = 0, owed = 0, tats = [];
+    LEDGER.forEach(function (r) {
+      if (stageOf(r) === 4) { credited++; tats.push(r.at[3]); }
+      else { owed += r.amt; if (r.hold) onHold++; }
+    });
+    tats.sort(function (a, b) { return a - b; });
+    var mid = Math.floor(tats.length / 2);
+    var med = !tats.length ? null : tats.length % 2 ? tats[mid] : Math.round((tats[mid - 1] + tats[mid]) / 2 * 10) / 10;
+    function part(pre, strong, post) {
+      if (pre) paySumEl.appendChild(document.createTextNode(pre));
+      paySumEl.appendChild(node('b', null, strong));
+      if (post) paySumEl.appendChild(document.createTextNode(post));
+    }
+    part('', credited + ' of ' + LEDGER.length, ' claims credited');
+    part(' \u00b7 median ', med === null ? 'nothing landed yet' : days(med), ' from claim to money');
+    part(' \u00b7 ', String(onHold), ' on hold');
+    part(' \u00b7 ', money(owed), ' still with the desk');
+  }
+
+  function payTrail(r) {
+    var dl = node('dl', 'pay-trail');
+    var filed = filedTs(r);
+    var st = stageOf(r);
+    for (var i = 0; i < STAGES.length; i++) {
+      var row = node('div');
+      var reached = i <= st;
+      row.appendChild(node('dt', null, STAGES[i]));
+      var when = node('dd', reached ? 'touched' : null);
+      var day = node('dd', null);
+      if (i === 0) { when.textContent = stamp(filed); day.textContent = 'day 0'; }
+      else if (reached) { when.textContent = stamp(filed + r.at[i - 1] * DAY_MS); day.textContent = 'day ' + r.at[i - 1]; }
+      else { when.textContent = i === st ? (r.hold ? 'held here' : 'waiting here') : 'not reached'; day.textContent = '\u2014'; }
+      row.appendChild(when);
+      row.appendChild(day);
+      dl.appendChild(row);
+    }
+    return dl;
+  }
+
+  function payCard(r) {
+    var li = node('li', 'pay');
+    li.dataset.ref = r.ref;
+    if (r.hold) li.classList.add('is-hold');
+    if (pay.sel === r.ref) li.classList.add('is-sel');
+
+    var st = stageOf(r);
+    var top = node('p', 'pay-top');
+    top.appendChild(node('b', 'pay-ref', r.ref));
+    var label = STAGES[st] + (st === 4 || !r.hold ? '' : ' \u00b7 on hold');
+    top.appendChild(node('span', 'pay-stage ' + (st === 4 ? 'done' : r.hold ? 'hold' : 'now'), label));
+    li.appendChild(top);
+
+    var who = node('p', 'pay-who');
+    who.appendChild(document.createTextNode(r.team));
+    who.appendChild(node('span', null, ' \u00b7 ' + r.event));
+    li.appendChild(who);
+
+    var amt = node('p', 'pay-amt');
+    amt.appendChild(node('b', null, money(r.amt)));
+    amt.appendChild(document.createTextNode(' \u00b7 ' + agoLine(r)));
+    li.appendChild(amt);
+
+    if (r.hold) li.appendChild(node('p', 'pay-hold', r.hold));
+
+    var trail = payTrail(r);
+    var open = pay.open[r.ref] === true;
+    trail.hidden = !open;
+    var more = node('button', 'btn btn-ghost btn-sm pay-more', open ? 'Hide the trail' : 'Show the trail');
+    more.type = 'button';
+    more.setAttribute('aria-expanded', String(open));
+    more.setAttribute('aria-label', 'Stage trail for ' + r.ref + ', ' + r.team);
+    more.addEventListener('click', function () {
+      var next = more.getAttribute('aria-expanded') !== 'true';
+      more.setAttribute('aria-expanded', String(next));
+      more.textContent = next ? 'Hide the trail' : 'Show the trail';
+      trail.hidden = !next;
+      if (next) pay.open[r.ref] = true; else delete pay.open[r.ref];
+      persistPay();
+    });
+    li.appendChild(more);
+    li.appendChild(trail);
+    return li;
+  }
+
+  function syncPayFilters() {
+    payFiltersEl.querySelectorAll('.filt').forEach(function (x) {
+      x.setAttribute('aria-pressed', String(x.dataset.filt === pay.filt));
+    });
+  }
+
+  function buildPayFilters() {
+    PAY_FILTERS.forEach(function (f) {
+      var b = node('button', 'filt');
+      b.type = 'button';
+      b.textContent = f;
+      b.dataset.filt = f;
+      b.setAttribute('aria-pressed', String(f === pay.filt));
+      b.addEventListener('click', function () {
+        pay.filt = f;
+        syncPayFilters();
+        renderPay();
+      });
+      payFiltersEl.appendChild(b);
+    });
+  }
+
+  function scopeWord() {
+    if (pay.filt === 'On hold') return 'on hold';
+    for (var i = 0; i < SHORT.length; i++) if (SHORT[i] === pay.filt) return STAGES[i];
+    return '';
+  }
+
+  /* the count line is the only thing that says what the screen just did, so it
+     covers the empty result too and the list itself never needs a placeholder row */
+  function renderPay() {
+    payListEl.textContent = '';
+    var rows = LEDGER.filter(matchPay).sort(comparePay);
+    var head = pay.filt === 'All' && rows.length === LEDGER.length
+      ? 'Showing all ' + rows.length + ' claims'
+      : 'Showing ' + rows.length + ' of ' + LEDGER.length + ' \u00b7 ' + scopeWord();
+    payCountEl.textContent = head + ' \u00b7 ' + ORDER_LABEL[pay.order] + '.';
+    rows.forEach(function (r) { payListEl.appendChild(payCard(r)); });
+    paySum();
+  }
+
+  /* ---------- claim reference lookup ---------- */
+  function normRef(v) { return String(v).toUpperCase().replace(/[\s\-_]+/g, ''); }
+
+  function claimFound(r) {
+    var st = stageOf(r);
+    var line = 'last moved on day ' + lastDay(r) + ' of a ' + r.age + '-day run';
+    if (st === 4) line = 'money landed on day ' + r.at[3] + ' of a ' + r.age + '-day run';
+    else if (!st) line = 'the claim is in the queue and nothing has touched it';
+    return line;
+  }
+
+  function findClaim() {
+    var raw = claimQEl.value.trim();
+    var key = normRef(raw);
+    claimOutEl.textContent = '';
+    claimOutEl.hidden = true;
+    if (!key) {
+      claimStatusEl.textContent = 'Type the reference from the claim mail. It is shaped like TF26-WB-118.';
+      claimQEl.focus();
+      return;
+    }
+    var hit = null;
+    for (var i = 0; i < LEDGER.length; i++) if (normRef(LEDGER[i].ref) === key) { hit = LEDGER[i]; break; }
+
+    if (!hit) {
+      claimStatusEl.textContent = 'Nothing in the sample ledger matches \u201C' + raw + '\u201D.';
+      var note = node('p', 'claim-row');
+      note.appendChild(node('b', null, 'A live desk would say exactly that and stop.'));
+      note.appendChild(node('span', null, ' Whether a reference exists is itself the answer a caller is fishing for, so the real lookup would sit behind '
+        + 'the login the claim was filed with and never list valid numbers. This one is open because all seven rows are invented.'));
+      claimOutEl.appendChild(note);
+      claimOutEl.hidden = false;
+      return;
+    }
+
+    pay.sel = hit.ref;
+    pay.open[hit.ref] = true;
+    var widened = !matchPay(hit);
+    if (widened) {
+      pay.filt = 'All';
+      syncPayFilters();
+    }
+    renderPay();
+    persistPay();
+    claimStatusEl.textContent = STAGES[stageOf(hit)] + (hit.hold ? ', on hold' : '') + ': ' + hit.ref + ' \u2014 ' + hit.team
+      + ', ' + claimFound(hit) + '.' + (widened ? ' The stage screen was cleared so the row is on it.' : '');
+
+    var head = node('p', 'claim-h', 'What the desk holds');
+    claimOutEl.appendChild(head);
+    var row = node('p', 'claim-row');
+    row.appendChild(node('b', null, hit.team + ' \u00b7 ' + hit.event));
+    row.appendChild(node('span', null, money(hit.amt) + ' \u00b7 filed ' + days(hit.age) + ' ago \u00b7 ' + claimFound(hit)));
+    claimOutEl.appendChild(row);
+    if (hit.hold) claimOutEl.appendChild(node('p', 'pay-hold', hit.hold));
+    claimOutEl.appendChild(payTrail(hit));
+    claimOutEl.hidden = false;
+
+    var card = payListEl.querySelector('[data-ref="' + hit.ref + '"]');
+    if (card && card.scrollIntoView) card.scrollIntoView({ block: 'nearest' });
+  }
+
+  payOrderEl.value = pay.order;
+  payOrderEl.addEventListener('change', function () {
+    pay.order = payOrderEl.value;
+    persistPay();
+    renderPay();
+  });
+  document.querySelector('[data-claim-go]').addEventListener('click', findClaim);
+  claimQEl.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); findClaim(); }
+  });
+  claimQEl.addEventListener('input', function () {
+    claimOutEl.hidden = true;
+    claimOutEl.textContent = '';
+    claimStatusEl.textContent = '';
+  });
+
   /* ---------- boot ---------- */
   buildControls();
   buildFilters();
@@ -1952,6 +2245,9 @@
   drawHunt();
   buildNetFilters();
   renderNet();
+
+  buildPayFilters();
+  renderPay();
 
   qEl.addEventListener('input', function () {
     mapQuery = qEl.value.trim().toLowerCase();
