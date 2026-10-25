@@ -7,7 +7,7 @@
 <meta name="description" content="Techfest, IIT Bombay — the 30th edition of Asia's largest science and technology festival. Competitions, workshops, lectures, exhibitions and entertainment on the IIT Bombay campus.">
 <meta name="theme-color" content="#0A0A0C">
 <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="css/styles.css?v=12">
+<link rel="stylesheet" href="css/styles.css?v=13">
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -465,6 +465,12 @@
             </span>
             <b>Crew</b><small>Teammates + team chat</small>
           </button>
+          <button role="tab" id="tab-os-live" aria-controls="p-os-live" aria-selected="false" class="tab" tabindex="-1" data-tab="live">
+            <span class="tab-i" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 7.4V12l3.6 2.3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            </span>
+            <b>Live day</b><small>Delays · map · results</small>
+          </button>
         </div>
 
         <div class="panels">
@@ -539,6 +545,119 @@
                   </form>
                 </div>
                 <p class="mod-note"><b>Needs a backend.</b> Real threads need presence, history across devices, file handoff and push so a pit crew can call a sub in from the arena. Threads here persist so you can feel the shape of the flow, and any reply the prototype makes is tagged as a demo reply.</p>
+              </section>
+            </div>
+          </div>
+
+          <!-- ============ LIVE DAY ============ -->
+          <div role="tabpanel" id="p-os-live" aria-labelledby="tab-os-live" class="panel" tabindex="0" hidden>
+            <div class="panel-top">
+              <h3>Live day: the console the crew watches</h3>
+              <p>On finale day the timetable slips, the crowd moves across campus, and results land before the ceremony. These are the three boards an organiser keeps open on the screen.</p>
+            </div>
+
+            <div class="mods">
+              <section class="mod" aria-labelledby="sched-h">
+                <header class="mod-head">
+                  <h4 id="sched-h">Schedule delay tracker</h4>
+                  <p class="mod-tag">demo clock · sample timetable</p>
+                </header>
+
+                <div class="clockbar">
+                  <p class="clock" data-clock>—</p>
+                  <div class="clock-side">
+                    <p class="clock-lbl">Demo day · one corridor, five venues</p>
+                    <p class="clock-behind" data-behind>Press play and the day runs.</p>
+                  </div>
+                  <div class="clock-speed" role="group" aria-label="Demo clock speed" data-speed></div>
+                  <div class="clock-speed clock-run" role="group" aria-label="Demo clock transport" data-transport></div>
+                </div>
+
+                <ul class="sched" data-sched></ul>
+                <p class="sched-carry" data-carry></p>
+                <p class="mod-note"><b>Needs a backend.</b> A real tracker consumes floor-lead check-ins or venue mics, then pushes the ripple to every dependent session and to the phones of the delegates holding a ticket for it. Here the corridor is a sample timetable and the clock is a simulation you can run at up to five minutes a second.</p>
+              </section>
+
+              <section class="mod" aria-labelledby="map-h">
+                <header class="mod-head">
+                  <h4 id="map-h">Interactive venue map</h4>
+                  <p class="mod-tag">sample campus plan</p>
+                </header>
+
+                <div class="map-tools">
+                  <label class="fld map-search">Find on the plan
+                    <input type="search" data-map-q maxlength="40" placeholder="Lecture hall, food, first aid" autocomplete="off">
+                  </label>
+                  <div class="filters map-filters" role="group" aria-label="Filter the plan by kind" data-map-filters></div>
+                </div>
+
+                <div class="map" data-map>
+                  <svg class="floorplan" viewBox="0 0 640 400" role="img" aria-label="Top-down sample campus plan: a central walk street with the arena, convocation hall and expo floor above it, and the workshop labs, main stage, food court and utility points below it.">
+                    <rect class="p-street" x="16" y="196" width="608" height="28" rx="14"></rect>
+                    <path class="p-line" d="M16 210h608"></path>
+                    <g class="p-blocks">
+                      <rect x="96" y="66" width="120" height="96" rx="10"></rect>
+                      <rect x="280" y="30" width="140" height="90" rx="10"></rect>
+                      <rect x="430" y="80" width="150" height="100" rx="10"></rect>
+                      <rect x="190" y="240" width="130" height="90" rx="10"></rect>
+                      <rect x="470" y="250" width="140" height="90" rx="10"></rect>
+                      <rect x="300" y="300" width="120" height="70" rx="10"></rect>
+                    </g>
+                    <g class="p-lbl" aria-hidden="true">
+                      <text x="156" y="156">ARENA</text>
+                      <text x="350" y="116">CONVOCATION</text>
+                      <text x="505" y="176">TECHEXPO</text>
+                      <text x="255" y="326">LABS</text>
+                      <text x="540" y="336">STAGE</text>
+                      <text x="360" y="366">FOOD</text>
+                    </g>
+                    <polyline class="route" data-route points=""></polyline>
+                  </svg>
+                  <div class="pins" data-pins></div>
+                </div>
+
+                <div class="map-foot">
+                  <p class="map-info" data-map-info>Tap a pin for what is there and what is on now.</p>
+                  <div class="map-act" data-map-act></div>
+                </div>
+                <p class="mod-note"><b>Needs a backend.</b> A live map needs occupancy from Wi-Fi or gate counts, queue times from the food and wash blocks, and step-free routing. This plan is drawn for the review, so the route it estimates is a straight walk down the sample street at 4.5&nbsp;km/h.</p>
+              </section>
+
+              <section class="mod" aria-labelledby="res-h">
+                <header class="mod-head">
+                  <h4 id="res-h">Live leaderboard &amp; bracket</h4>
+                  <p class="mod-tag">organiser console · sample scores</p>
+                </header>
+
+                <div class="res-grid">
+                  <div class="res-col">
+                    <p class="res-sub">Exhibition-class standings, as entered by the judges on the mat</p>
+                    <div class="board-wrap">
+                      <table class="board" data-board>
+                        <caption class="sr-only">Sample live standings with score trend</caption>
+                        <thead>
+                          <tr><th scope="col">#</th><th scope="col">Team</th><th scope="col">Points</th><th scope="col">Since last</th><th scope="col">Trend</th></tr>
+                        </thead>
+                        <tbody data-board-body></tbody>
+                      </table>
+                    </div>
+                    <div class="mm-foot">
+                      <button class="btn btn-gold btn-sm" type="button" data-res-push>Log a judge entry</button>
+                      <button class="btn btn-ghost btn-sm" type="button" data-res-reset>Reset standings</button>
+                    </div>
+                    <p class="mod-live" data-res-status aria-live="polite"></p>
+                  </div>
+
+                  <div class="res-col">
+                    <p class="res-sub">Knockout bracket — tap the machine that won each heat</p>
+                    <div class="bracket" role="group" aria-label="Knockout bracket" data-bracket></div>
+                    <div class="mm-foot">
+                      <button class="btn btn-ghost btn-sm" type="button" data-br-reset>Reset bracket</button>
+                    </div>
+                    <p class="mod-live" data-br-status aria-live="polite"></p>
+                  </div>
+                </div>
+                <p class="mod-note"><b>Needs a backend.</b> Standings need a signed judge feed, an appeal window and a frozen revision history, because one corrected entry changes a bracket. Here the entries are simulated by the button and the whole board stays on this device.</p>
               </section>
             </div>
           </div>
@@ -726,7 +845,7 @@
   </div>
 </footer>
 
-<script src="js/main.js?v=12"></script>
-<script src="js/platform.js?v=12"></script>
+<script src="js/main.js?v=13"></script>
+<script src="js/platform.js?v=13"></script>
 </body>
 </html>

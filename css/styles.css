@@ -536,6 +536,97 @@ html.motion-on .phase-mark:not(:disabled):hover .up{transform:translateY(-2px)}
 .chat-form input:focus-visible{outline:none;border-color:var(--gold)}
 .chat-form input:disabled,.chat-form button:disabled{opacity:.5;cursor:not-allowed}
 
+/* ---------- live day: delay tracker ---------- */
+.clockbar{display:flex;flex-wrap:wrap;align-items:center;gap:14px 18px;padding:14px 16px;margin-bottom:16px;border:1px solid var(--line);border-radius:12px;background:rgba(12,13,18,.7)}
+.clock{margin:0;font-size:clamp(1.9rem,4.4vw,2.5rem);font-weight:700;letter-spacing:-.03em;line-height:1;color:var(--gold);font-variant-numeric:tabular-nums}
+.clock-side{flex:1 1 150px;display:grid;gap:3px;min-width:0}
+.clock-lbl{font-size:.62rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--haze-2)}
+.clock-behind{font-size:.86rem;color:var(--paper)}
+.clock-speed{display:flex;flex-wrap:wrap;gap:6px}
+.sched{display:grid;gap:7px;list-style:none}
+.sc{display:grid;grid-template-columns:58px minmax(0,1fr) auto;gap:10px 14px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:rgba(12,13,18,.6)}
+.sc.is-now{border-color:rgba(255,215,0,.5);background:linear-gradient(100deg,rgba(255,215,0,.1),rgba(12,13,18,.7))}
+.sc.is-past{opacity:.62}
+.sc-time{font-size:.9rem;font-weight:700;letter-spacing:-.01em;font-variant-numeric:tabular-nums;color:var(--paper)}
+.sc-body{display:grid;gap:2px;min-width:0}
+.sc-title{font-size:.9rem;line-height:1.35}
+.sc-venue{font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--haze-2)}
+.sc-chip{flex:none;display:inline-flex;align-items:center;min-height:24px;padding:3px 9px;border:1px solid var(--edge);border-radius:999px;font-size:.66rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--haze-2);white-space:nowrap}
+.sc-chip.late{border-color:rgba(233,190,44,.6);color:var(--gold-2)}
+.sc-chip.run{border-color:var(--gold);background:var(--gold);color:#141200}
+.sc-chip.next{background:var(--gold-dim);border-color:rgba(255,215,0,.55);color:var(--gold)}
+.sc-pick{font-size:.6rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold)}
+.sched-carry{margin-top:14px;font-size:.84rem;line-height:1.6;color:var(--haze);border-left:2px solid rgba(255,215,0,.5);padding-left:13px}
+.sched-carry b{color:var(--paper)}
+
+/* ---------- live day: venue map ---------- */
+.map-tools{display:grid;grid-template-columns:minmax(0,240px) minmax(0,1fr);gap:14px;align-items:start;margin-bottom:14px}
+.map-filters{margin-bottom:0}
+.map{position:relative;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:
+  radial-gradient(90% 70% at 50% 108%,rgba(255,215,0,.06),transparent 60%),rgba(10,11,16,.66)}
+/* the box must keep the viewBox ratio or the SVG letterboxes and the
+   percentage-positioned pins drift off the drawing they label */
+/* .floorplan, not .plan: .plan is already the shortlist panel's class */
+.floorplan{display:block;width:100%;height:auto;aspect-ratio:640/400}
+.p-street{fill:rgba(255,255,255,.05)}
+.p-line{stroke:rgba(255,255,255,.16);stroke-dasharray:5 11}
+.p-blocks rect{fill:rgba(255,255,255,.035);stroke:var(--edge);stroke-width:1}
+.p-lbl text{fill:var(--haze-2);font-size:10px;letter-spacing:2px;text-anchor:middle;opacity:.5}
+.route{fill:none;stroke:var(--gold);stroke-width:2.4;stroke-linecap:round;stroke-dasharray:8 9;opacity:.9}
+html.motion-on .route{animation:dash 1.4s linear infinite}
+@keyframes dash{to{stroke-dashoffset:-34}}
+.pins{position:absolute;inset:0}
+.pin{position:absolute;transform:translate(-50%,-50%);display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;padding:0;border:0;background:none;cursor:pointer}
+.pin-dot{position:relative;width:13px;height:13px;border-radius:999px;background:var(--paper);border:2px solid var(--gold);box-shadow:0 0 0 3px rgba(10,10,12,.8);transition:transform .2s var(--ease),background .2s}
+.pin:hover .pin-dot,.pin:focus-visible .pin-dot{transform:scale(1.28)}
+.pin:focus-visible{outline:none}
+.pin:focus-visible .pin-dot{box-shadow:0 0 0 3px rgba(10,10,12,.8),0 0 0 5px var(--gold)}
+.pin-lbl{position:absolute;bottom:calc(100% - 2px);left:50%;transform:translateX(-50%);padding:2px 7px;border-radius:6px;background:rgba(8,9,12,.94);border:1px solid var(--edge);font-size:.66rem;letter-spacing:.04em;white-space:nowrap;color:var(--paper);opacity:0;transition:opacity .2s}
+.pin:hover .pin-lbl,.pin:focus-visible .pin-lbl,.pin.is-sel .pin-lbl{opacity:1}
+.pin.is-sel .pin-dot{background:var(--gold)}
+.pin.is-you .pin-dot{background:var(--gold);border-color:var(--paper);width:16px;height:16px}
+.pin.is-you .pin-lbl{opacity:1;color:var(--gold)}
+.pin.is-off{opacity:.18;pointer-events:none}
+.pin.is-live::after{content:"";position:absolute;top:-1px;right:-1px;width:7px;height:7px;border-radius:999px;background:var(--gold);box-shadow:0 0 0 2px rgba(10,10,12,.9)}
+/* pins hugging the plan edge would have their label clipped by .map overflow */
+.pin.l-l .pin-lbl{left:0;transform:none}
+.pin.l-r .pin-lbl{left:auto;right:0;transform:none}
+html.motion-on .pin.is-live::after{animation:blip 1.6s ease-in-out infinite}
+@keyframes blip{0%,100%{opacity:1}50%{opacity:.25}}
+.map-foot{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;margin-top:13px}
+.map-info{font-size:.85rem;line-height:1.5;color:var(--paper)}
+.map-info b{color:var(--gold)}
+.map-act{display:flex;flex-wrap:wrap;gap:7px;justify-content:flex-end}
+.map-est{font-size:.66rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);align-self:center}
+
+/* ---------- live day: leaderboard + bracket ---------- */
+.res-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr));gap:22px}
+.res-col{display:grid;align-content:start;gap:12px;min-width:0}
+.res-sub{font-size:.66rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--haze-2)}
+.board-wrap{overflow-x:auto;scrollbar-gutter:stable}
+.board{width:100%;min-width:330px;border-collapse:collapse;font-size:.86rem}
+.board th{padding:0 9px 8px 0;text-align:left;font-size:.6rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--haze-2);border-bottom:1px solid var(--line);white-space:nowrap}
+.board td{padding:9px 9px 9px 0;border-bottom:1px solid var(--line-2);vertical-align:middle}
+.board td:last-child,.board th:last-child{padding-right:0}
+.bd-rank{font-weight:700;font-variant-numeric:tabular-nums;color:var(--paper)}
+.bd-team{color:var(--paper)}
+.bd-score{font-variant-numeric:tabular-nums;font-weight:700;color:var(--gold)}
+.bd-delta{font-variant-numeric:tabular-nums;font-size:.76rem;color:var(--haze-2)}
+.bd-delta.up{color:var(--gold)}
+.bd-delta.down{color:var(--gold-2)}
+.board tr.is-jump td{background:rgba(255,215,0,.07)}
+.spark{display:block;width:58px;height:18px;overflow:visible}
+.bracket{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.rd{display:grid;gap:8px;align-content:start;min-width:0}
+.rd-h{font-size:.58rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--haze-2)}
+.mt{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:rgba(12,13,18,.6)}
+.mt-slot{display:block;width:100%;padding:7px 9px;text-align:left;border:0;border-bottom:1px solid var(--line);background:none;color:var(--haze);font:inherit;font-size:.78rem;line-height:1.3;cursor:pointer;transition:background .2s,color .2s}
+.mt-slot:last-child{border-bottom:0}
+.mt-slot:not([disabled]):hover{background:rgba(255,255,255,.06);color:var(--paper)}
+.mt-slot:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
+.mt-slot.is-win{background:var(--gold-dim);color:var(--gold);font-weight:700}
+.mt-slot[disabled]{cursor:default;color:var(--haze-2);opacity:.7}
+
 /* ============================================================
    responsive
    ============================================================ */
@@ -569,6 +660,15 @@ html.motion-on .phase-mark:not(:disabled):hover .up{transform:translateY(-2px)}
   .head-act{flex:1 1 auto;flex-wrap:wrap;justify-content:flex-end;gap:10px;row-gap:8px}
   .lvl{gap:0;padding:2px}
   .lvl label{padding:4px 6px}
+  .sc{grid-template-columns:48px minmax(0,1fr)}
+  .sc > .sc-chip{grid-column:1/-1;justify-self:start}
+  .map-tools,.map-foot{grid-template-columns:minmax(0,1fr)}
+  .map-act{justify-content:flex-start}
+  .bracket{grid-template-columns:minmax(0,1fr);gap:14px}
+  .rd{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .rd-h{grid-column:1/-1}
+  /* the printed zone names fall under 6px at phone width; the pins carry them */
+  .p-lbl{display:none}
 }
 @media (max-width:420px){
   /* mark only — the wordmark stays as the brand link's accessible name */
