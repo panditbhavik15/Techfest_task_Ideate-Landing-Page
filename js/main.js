@@ -205,9 +205,16 @@
 
   /* ---------- ambient sound: drone bed + generative score ---------- */
   var soundBtn = document.querySelector('[data-sound-toggle]');
+  var levelGroup = document.querySelector('[data-level-group]');
   var sound = null;
   var soundOn = false;
-  var LEVEL = 0.055;
+  /* three listening levels. The level is remembered; whether anything plays
+     at all never is — that stays a per-visit decision. */
+  var LEVELS = { low: 0.032, med: 0.055, loud: 0.086 };
+  var LVL_KEY = 'tf-level';
+  var lvl = 'med';
+  try { lvl = localStorage.getItem(LVL_KEY) || 'med'; } catch (e) {}
+  if (!LEVELS[lvl]) lvl = 'med';
 
   var BPM = 68;
   var BEAT = 60 / BPM;
@@ -362,9 +369,30 @@
     var g = sound.out.gain, t = sound.ctx.currentTime;
     g.cancelScheduledValues(t);
     g.setValueAtTime(g.value, t);
-    g.linearRampToValueAtTime(audible ? LEVEL : 0, t + (audible ? 1.6 : 0.7));
+    g.linearRampToValueAtTime(audible ? LEVELS[lvl] : 0, t + (audible ? 1.6 : 0.7));
     if (audible) { sound.ctx.resume(); startSeq(); } else { stopSeq(); }
   }
+
+  if (levelGroup) {
+    var picked = levelGroup.querySelector('input[value="' + lvl + '"]');
+    if (picked) picked.checked = true;
+    levelGroup.addEventListener('change', function (e) {
+      var input = e.target.closest('input[name="lvl"]');
+      if (!input) return;
+      lvl = input.value;
+      try { localStorage.setItem(LVL_KEY, lvl); } catch (err) {}
+      applySound(soundOn);
+    });
+  }
+
+  /* Modules ask for a blip through this event. It is only ever heard while the
+     ambience is already running, so no interaction can startle with sound. */
+  document.addEventListener('tf:ping', function () {
+    if (!sound || !soundOn) return;
+    var t = sound.ctx.currentTime;
+    voice(sound.ctx, sound.music, 1180, t, 0.16, 0.16, 'sine', 5200);
+    voice(sound.ctx, sound.music, 1770, t + 0.07, 0.2, 0.1, 'sine', 5200);
+  });
 
   if (soundBtn) {
     soundBtn.addEventListener('click', function () {
@@ -373,6 +401,9 @@
         if (!sound) {
           soundBtn.disabled = true;
           soundBtn.querySelector('.sound-lbl').textContent = 'No audio';
+          if (levelGroup) {
+            levelGroup.querySelectorAll('input').forEach(function (i) { i.disabled = true; });
+          }
           return;
         }
       }

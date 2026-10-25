@@ -7,7 +7,7 @@
 <meta name="description" content="Techfest, IIT Bombay — the 30th edition of Asia's largest science and technology festival. Competitions, workshops, lectures, exhibitions and entertainment on the IIT Bombay campus.">
 <meta name="theme-color" content="#0A0A0C">
 <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="css/styles.css?v=7">
+<link rel="stylesheet" href="css/styles.css?v=9">
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -45,6 +45,15 @@
           <path class="slash" d="M4 16 16.5 3.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
         </svg><span class="sound-lbl">Ambience</span>
       </button>
+      <fieldset class="lvl" data-level-group>
+        <legend class="sr-only">Ambience volume</legend>
+        <input type="radio" name="lvl" id="lvl-low" value="low">
+        <label for="lvl-low"><span class="bars3" aria-hidden="true"><i></i><i></i><i></i></span><span class="lvl-txt">Low</span></label>
+        <input type="radio" name="lvl" id="lvl-med" value="med" checked>
+        <label for="lvl-med"><span class="bars3" aria-hidden="true"><i></i><i></i><i></i></span><span class="lvl-txt">Med</span></label>
+        <input type="radio" name="lvl" id="lvl-loud" value="loud">
+        <label for="lvl-loud"><span class="bars3" aria-hidden="true"><i></i><i></i><i></i></span><span class="lvl-txt">Loud</span></label>
+      </fieldset>
       <button class="motion-btn" type="button" data-motion-toggle aria-pressed="false">
         <svg class="ic" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
           <circle cx="10" cy="10" r="6.6" fill="none" stroke="currentColor" stroke-width="1.5"/>
@@ -615,6 +624,6 @@
   </div>
 </footer>
 
-<script src="js/main.js?v=7"></script>
+<script src="js/main.js?v=9"></script>
 </body>
 </html>
