@@ -22,6 +22,7 @@ Opening `index.html` directly also works; a server keeps the self-hosted fonts a
 index.html          markup + all copy
 css/styles.css      design tokens, liquid glass, layout, motion (Space Grotesk, #0A0A0C / #FFD700)
 js/main.js          category tabs, motion toggle, scroll reveal, mobile nav, marquee, shortlist, ambience
+js/platform.js      the Fest OS modules: crew, live day, judging, engage, payouts
 assets/img          generated 2D artwork (webp) + favicon.svg
 assets/fonts        self-hosted Space Grotesk 400/500/700 latin woff2
 ```
@@ -114,6 +115,17 @@ The whole thing ramps in over 1.6 s at a low level, stops scheduling and ducks t
 the tab is hidden, and the choice is deliberately never remembered — a returning visitor is asked
 again.
 
+### Three listening levels
+
+Next to the button is a **Low / Med / Loud** pick (radio inputs named `lvl`, master gains
+0.032 / 0.055 / 0.086). Changing it while the drone plays just re-ramps the master over the same
+1.6 s curve; the bar scheduler is untouched, so the groove never stutters to a restart. Unlike the
+on/off choice, the *level* is remembered (`tf-level`) — how loud you left it is a preference, not a
+consent question.
+
+The Fest OS modules ask for a confirmation blip through a `tf:ping` document event. It is only ever
+heard while the ambience is already running, so no interaction can startle with sound.
+
 ## Shortlist
 
 A landing page that only links outward has no way to answer "so what would I actually go to?",
@@ -126,6 +138,52 @@ The list is stored in `localStorage` under `tf-plan` as `{slug, title, kind}` ob
 category + title so the same words in two lanes stay distinct. Nothing leaves the browser, there
 is no account, and clearing it removes the key entirely. With storage unavailable (private mode,
 locked-down origins) the toggles still work for the visit and simply forget on reload.
+
+## Fest OS
+
+`#fest-os` covers the part of a festival that is not browsing: who is on my team, where the day
+actually is, how I was scored, what happens after I win. Five tabs on one rail — and because the
+ARIA tab engine in `js/main.js` is generic over `[role="tablist"]`, the module rail got the roving
+tabindex and arrow-key behaviour for free.
+
+Everything in it is **sample data written for this review**. No module has a server, no record is
+real, nothing typed leaves the device: state lives in `localStorage` under `tf-crew`, `tf-live`,
+`tf-judge`, `tf-hunt`, `tf-net` and `tf-pay`. Each module ends with a `.mod-note` naming what a live
+deployment would need — an auth boundary, a payout instrument chosen after KYC, a container for the
+code runner.
+
+- **Crew** — a find-a-teammate form (skills, event lane, what you are still short of) against six
+  invented builder profiles, and a pit-channel chat with unread badges and canned sample replies.
+- **Live day** — a demo clock that starts at 11:12 and walks the corridor toward the 19:00 halt at
+  real time, 1 min/sec or 5 min/sec; a delay tracker where one drifting session pushes everything
+  behind it; the venue floor plan with nine searchable pins; a leaderboard and a seven-heat bracket
+  you call up quarter by quarter. The clock only moves while that panel is showing and the tab is
+  visible.
+- **Judging** — a weighted rubric (Innovation 30 / Execution 30 / Documentation 20 / Presentation
+  20) with 0–10 marks, live per-criterion points, a warning when the weights stop adding to 100
+  since the score normalises across them, lock and unlock, and a CSV export that doubles every quote
+  inside a field. Beside it, an evaluator that compiles a submission in a Web Worker built from a
+  Blob and terminates it after 1.5 s per case — plus a note stating plainly that a worker has no CPU,
+  memory or network limits and is therefore not a security boundary.
+- **Engage** — a six-stop campus hunt whose placards unlock in order, drawn on the same floor plan
+  with the walked route estimated in metres and minutes, and an alumni and recruiter board: eight
+  profiles with no real names and employers described rather than named, search, ten filters, and
+  saved intro requests as removable chips.
+- **Payouts** — a seven-claim ledger over five stages, with a median claim-to-money figure, a stage
+  screen, three orders, a per-claim stage trail and a reference lookup. The lookup is deliberately
+  unkind: an unknown reference gets "nothing matches" and no hint about whether the number is real,
+  because that confirmation is the entire attack.
+
+Three conventions hold the section together:
+
+- every dynamic node comes from a `node(tag, class, text)` helper and `textContent` — `innerHTML`
+  appears nowhere in `js/platform.js`, so a value typed into any field cannot become markup;
+- every interval is guarded on `document.hidden` *and* on its own panel's `.is-on` class, so a
+  backgrounded tab pays for no animation it cannot see;
+- every state reader re-validates what it takes out of storage — numbers must actually be numbers
+  (`isFinite(null)` is true, which silently re-scored a blank sheet once), stage indices must be in
+  range, saved ids must exist in the sample set — because a hand-edited store must not be able to
+  fake a locked verdict, an unsolved stop or a credited claim.
 
 ## Links out
 
