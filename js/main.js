@@ -302,6 +302,92 @@
     });
   }
 
+  /* ---------- shortlist: built and kept on this device ---------- */
+  var PLAN_KEY = 'tf-plan';
+  var planBox = document.getElementById('my-plan');
+  var planList = document.querySelector('[data-plan-list]');
+  var planCount = document.querySelector('[data-plan-count]');
+  var planClear = document.querySelector('[data-plan-clear]');
+  var plan = [];
+  try { plan = JSON.parse(localStorage.getItem(PLAN_KEY)) || []; } catch (e) { plan = []; }
+  if (!Array.isArray(plan)) plan = [];
+
+  function planSlug(kind, title) {
+    return (kind + ' ' + title).toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  }
+  function planIndex(slug) {
+    for (var i = 0; i < plan.length; i++) { if (plan[i].s === slug) return i; }
+    return -1;
+  }
+  function storePlan() {
+    try {
+      if (plan.length) localStorage.setItem(PLAN_KEY, JSON.stringify(plan));
+      else localStorage.removeItem(PLAN_KEY);
+    } catch (e) {}
+  }
+  function syncPicks() {
+    document.querySelectorAll('.pick').forEach(function (btn) {
+      btn.setAttribute('aria-pressed', String(planIndex(btn.dataset.slug) > -1));
+    });
+  }
+  function renderPlan() {
+    if (!planBox || !planList || !planCount) return;
+    planList.textContent = '';
+    plan.forEach(function (item) {
+      var li = document.createElement('li');
+      var kind = document.createElement('small');
+      kind.textContent = item.k;
+      var name = document.createElement('b');
+      name.textContent = item.t;
+      var x = document.createElement('button');
+      x.type = 'button';
+      x.className = 'plan-x';
+      x.textContent = '\u00d7';
+      x.setAttribute('aria-label', 'Remove ' + item.t + ' from shortlist');
+      x.addEventListener('click', function () { setPlan(item.s, false); });
+      li.appendChild(kind); li.appendChild(name); li.appendChild(x);
+      planList.appendChild(li);
+    });
+    planCount.textContent = plan.length + (plan.length === 1 ? ' item saved' : ' items saved');
+    planBox.classList.toggle('is-empty', !plan.length);
+  }
+  function setPlan(slug, add, title, kind) {
+    var i = planIndex(slug);
+    if (add && i < 0) plan.push({ s: slug, t: title, k: kind });
+    else if (!add && i > -1) plan.splice(i, 1);
+    else return;
+    storePlan(); syncPicks(); renderPlan();
+  }
+
+  if (planBox) {
+    document.querySelectorAll('.cards .card').forEach(function (card) {
+      var h = card.querySelector('h4');
+      if (!h) return;
+      var tag = card.querySelector('.card-tag');
+      var kind = (tag ? tag.textContent.trim() : '') || 'Event';
+      var title = h.textContent.trim();
+      var slug = planSlug(kind, title);
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'pick';
+      btn.dataset.slug = slug;
+      btn.setAttribute('aria-pressed', String(planIndex(slug) > -1));
+      btn.innerHTML = '<span class="plus" aria-hidden="true"></span>' +
+        '<span class="lbl-off">Add to plan</span><span class="lbl-on">In your plan</span>';
+      btn.addEventListener('click', function () {
+        setPlan(slug, planIndex(slug) < 0, title, kind);
+      });
+      card.appendChild(btn);
+    });
+    if (planClear) {
+      planClear.addEventListener('click', function () {
+        plan = [];
+        storePlan(); syncPicks(); renderPlan();
+      });
+    }
+    renderPlan();
+  }
+
   var yr = document.getElementById('yr');
   if (yr) yr.textContent = String(new Date().getFullYear());
 

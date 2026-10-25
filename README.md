@@ -21,7 +21,7 @@ Opening `index.html` directly also works; a server keeps the self-hosted fonts a
 ```
 index.html          markup + all copy
 css/styles.css      design tokens, layout, motion (Space Grotesk, #0A0A0C / #FFD700)
-js/main.js          category tabs, motion toggle, scroll reveal, mobile nav, marquee
+js/main.js          category tabs, motion toggle, scroll reveal, mobile nav, marquee, shortlist
 assets/img          generated 2D artwork (webp) + favicon.svg
 assets/fonts        self-hosted Space Grotesk 400/500/700 latin woff2
 ```
@@ -70,6 +70,19 @@ Audio API — three low oscillators through a slowly sweeping low-pass, plus a b
 noise wash for crowd distance. No audio file, no autoplay: the graph is created on the first
 click, ramps in over 1.6 s at a low level, and ducks to silence when the tab is hidden.
 The choice is deliberately never remembered.
+
+## Shortlist
+
+A landing page that only links outward has no way to answer "so what would I actually go to?",
+so every competition, workshop and event card carries an **Add to plan** toggle that JavaScript
+appends to it (the image-only cards are skipped). Picks collect in the **Your shortlist** panel
+at the top of the closing section: each row names the item and its category, has its own remove
+button, and the panel counts them out loud through an `aria-live` region.
+
+The list is stored in `localStorage` under `tf-plan` as `{slug, title, kind}` objects, keyed by
+category + title so the same words in two lanes stay distinct. Nothing leaves the browser, there
+is no account, and clearing it removes the key entirely. With storage unavailable (private mode,
+locked-down origins) the toggles still work for the visit and simply forget on reload.
 
 ## Links out
 
