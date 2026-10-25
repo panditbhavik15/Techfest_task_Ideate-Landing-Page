@@ -1510,6 +1510,421 @@
     ceStatus.textContent = 'The worker was terminated, so nothing left the page. Earlier results are still on the sheet.';
   });
 
+  /* ============================================================
+     engage — campus treasure hunt
+     ============================================================ */
+  var HUNT_KEY = 'tf-hunt';
+
+  /* the same six zones the venue map draws, so the two modules share a campus */
+  var STOPS = [
+    { id: 'gate', n: '01', place: 'Main gate', x: 40, y: 370, code: 'AETH',
+      riddle: 'Start where the queue forms before the doors open. The placard hangs on the pillar you walk under.',
+      print: 'The placard on the gate pillar reads' },
+    { id: 'arena', n: '02', place: 'Arena floor', x: 156, y: 114, code: 'TORQ',
+      riddle: 'Follow the smell of burnt flux to where the machines are weighed. Count the pits from the crowd side.',
+      print: 'Third pit, chalked on the kerb:' },
+    { id: 'convocation', n: '03', place: 'Convocation Hall', x: 350, y: 76, code: 'VERB',
+      riddle: 'A room of chairs facing a lectern nobody uses today. The clue is on the aisle you are not allowed to sit in.',
+      print: 'Taped under the centre seat:' },
+    { id: 'expo', n: '04', place: 'TechExpo floor', x: 505, y: 130, code: 'FLUX',
+      riddle: 'Where the colleges hang their banners. Find the one with no banner yet.',
+      print: 'On the empty booth number plate:' },
+    { id: 'labs', n: '05', place: 'Workshop Labs', x: 255, y: 286, code: 'KILN',
+      riddle: 'Ear protection, a soldering row, and a machine that never switched off overnight.',
+      print: 'Printed on the 3D printer queue:' },
+    { id: 'stage', n: '06', place: 'Main Stage', x: 540, y: 300, code: 'NOVA',
+      riddle: 'The last stop. Somewhere the lights are aimed at a crowd of chairs, and the set list is still on a clipboard.',
+      print: 'On the clipboard at stage left:' }
+  ];
+
+  var hunt = { solved: {}, start: null };
+  try {
+    var hraw = JSON.parse(localStorage.getItem(HUNT_KEY));
+    if (hraw && typeof hraw === 'object') {
+      if (hraw.solved && typeof hraw.solved === 'object') hunt.solved = hraw.solved;
+      if (typeof hraw.start === 'number') hunt.start = hraw.start;
+    }
+  } catch (e) {}
+  /* a hand-edited store must not unlock a stop that is not in the sheet */
+  Object.keys(hunt.solved).forEach(function (id) {
+    if (typeof hunt.solved[id] !== 'number') delete hunt.solved[id];
+  });
+
+  function persistHunt() {
+    try { localStorage.setItem(HUNT_KEY, JSON.stringify(hunt)); } catch (e) {}
+  }
+  function solvedCount() {
+    var n = 0;
+    STOPS.forEach(function (s) { if (typeof hunt.solved[s.id] === 'number') n++; });
+    return n;
+  }
+  function nextStop() {
+    for (var i = 0; i < STOPS.length; i++) if (typeof hunt.solved[STOPS[i].id] !== 'number') return STOPS[i];
+    return null;
+  }
+  function stopById(id) {
+    for (var i = 0; i < STOPS.length; i++) if (STOPS[i].id === id) return STOPS[i];
+    return null;
+  }
+  function dur(ms) {
+    var s = Math.max(0, Math.round(ms / 1000));
+    var m = Math.floor(s / 60);
+    var r = s % 60;
+    return m ? m + ' min ' + (r < 10 ? '0' : '') + r + ' s' : r + ' s';
+  }
+
+  var huntEl = document.querySelector('[data-hunt-stops]');
+  var huntPinsEl = document.querySelector('[data-hunt-pins]');
+  var huntRouteEl = document.querySelector('[data-hunt-route]');
+  var huntInfoEl = document.querySelector('[data-hunt-info]');
+  var huntCountEl = document.querySelector('[data-hunt-count]');
+  var huntFillEl = document.querySelector('[data-hunt-fill]');
+  var huntTimeEl = document.querySelector('[data-hunt-time]');
+  var huntSel = null;
+  var huntNote = '';
+
+  function buildHunt() {
+    STOPS.forEach(function (s) {
+      var li = node('li', 'clue');
+      li.dataset.stop = s.id;
+      var top = node('p', 'clue-top');
+      top.appendChild(node('b', null, s.place));
+      top.appendChild(node('span', 'clue-num', 'Stop ' + s.n));
+      var riddle = node('p', 'clue-riddle', s.riddle);
+      var print = node('p', 'clue-print');
+      print.appendChild(document.createTextNode(s.print + ' '));
+      print.appendChild(node('code', null, s.code));
+      var form = node('div', 'clue-form');
+      var lab = node('label', 'fld clue-in');
+      lab.appendChild(document.createTextNode('Placard code'));
+      var input = node('input');
+      input.type = 'text';
+      input.maxLength = 4;
+      input.autocomplete = 'off';
+      input.placeholder = '4 letters';
+      input.setAttribute('aria-label', 'Placard code for stop ' + s.n + ' at ' + s.place);
+      lab.appendChild(input);
+      var btn = node('button', 'btn btn-gold btn-sm');
+      btn.type = 'button';
+      btn.textContent = 'Check in';
+      form.appendChild(lab); form.appendChild(btn);
+      var out = node('p', 'clue-out');
+      out.setAttribute('aria-live', 'polite');
+      li.appendChild(top); li.appendChild(riddle); li.appendChild(print);
+      li.appendChild(form); li.appendChild(out);
+      huntEl.appendChild(li);
+      btn.addEventListener('click', function () { checkIn(s, input, out); });
+      input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); checkIn(s, input, out); }
+      });
+    });
+    STOPS.forEach(function (s) {
+      var pin = node('button', 'pin');
+      pin.type = 'button';
+      pin.style.left = (s.x / 640 * 100) + '%';
+      pin.style.top = (s.y / 400 * 100) + '%';
+      if (s.x < 100) pin.classList.add('l-l');
+      if (s.x > 500) pin.classList.add('l-r');
+      pin.appendChild(node('span', 'pin-dot'));
+      pin.appendChild(node('span', 'pin-lbl', 'Stop ' + s.n + ' · ' + s.place));
+      huntPinsEl.appendChild(pin);
+      pin.dataset.stop = s.id;
+      pin.addEventListener('click', function () { focusStop(s.id); });
+    });
+  }
+
+  function checkIn(s, input, out) {
+    var given = (input.value || '').trim().toUpperCase();
+    if (!given) { out.textContent = 'Type what the placard says.'; return; }
+    if (given !== s.code) {
+      out.textContent = 'That is not it — the placard here is four letters.';
+      input.select();
+      return;
+    }
+    if (typeof hunt.solved[s.id] === 'number') {
+      out.textContent = 'Already cleared at ' + clock(hunt.solved[s.id]) + '.';
+      return;
+    }
+    if (!hunt.start) hunt.start = Date.now();
+    hunt.solved[s.id] = Date.now();
+    persistHunt();
+    var nx = nextStop();
+    if (!nx) huntSel = null;
+    drawHunt();
+    if (nx) {
+      var card = huntEl.querySelector('[data-stop="' + nx.id + '"]');
+      if (card) card.querySelector('input').focus();
+      huntInfoEl.textContent = (huntNote ? huntNote + ' ' : '') + 'Stop ' + nx.n + ' at ' + nx.place + ' is open.';
+    } else {
+      huntInfoEl.textContent = huntNote + ' All six cleared.';
+    }
+  }
+
+  function focusStop(id) {
+    huntSel = id;
+    drawHuntPins();
+    var card = huntEl.querySelector('[data-stop="' + id + '"]');
+    if (card) {
+      card.scrollIntoView({ block: 'nearest' });
+      var s = stopById(id);
+      huntInfoEl.textContent = (huntNote ? huntNote + ' ' : '') + 'Stop ' + s.n + ' · ' + s.place +
+        (typeof hunt.solved[id] === 'number' ? ' — cleared at ' + clock(hunt.solved[id]) + '.'
+          : nextStopId() === id ? ' — open now.' : ' — not open yet.');
+    }
+  }
+  function nextStopId() { var n = nextStop(); return n ? n.id : null; }
+
+  function drawHuntPins() {
+    huntPinsEl.querySelectorAll('.pin').forEach(function (pin) {
+      var id = pin.dataset.stop;
+      var done = typeof hunt.solved[id] === 'number';
+      pin.className = 'pin' + (id === huntSel ? ' is-sel' : '') + (done ? ' is-done' : '');
+      pin.setAttribute('aria-pressed', String(id === huntSel));
+    });
+    /* the walk follows the same single corridor as the venue map */
+    var order = STOPS.filter(function (s) { return typeof hunt.solved[s.id] === 'number'; });
+    var pts = [];
+    order.forEach(function (s, i) {
+      if (i > 0) pts.push([order[i - 1].x, STREET], [s.x, STREET]);
+      pts.push([s.x, s.y]);
+    });
+    huntRouteEl.setAttribute('points', pts.map(function (p) { return p[0] + ',' + p[1]; }).join(' '));
+    var len = 0;
+    for (var k = 1; k < pts.length; k++) {
+      len += Math.abs(pts[k][0] - pts[k - 1][0]) + Math.abs(pts[k][1] - pts[k - 1][1]);
+    }
+    var m = Math.round(len * UNIT_M);
+    huntNote = order.length > 1
+      ? 'Route so far ≈ ' + m + ' m · ' + Math.ceil(m / 1.25 / 60) + ' min on foot, through ' + order.length + ' cleared stops.'
+      : '';
+    if (order.length < 2) huntInfoEl.textContent = 'Tap a stop on the plan to read its clue.';
+  }
+
+  function drawHunt() {
+    var n = solvedCount();
+    var nx = nextStop();
+    huntCountEl.textContent = n + ' of ' + STOPS.length + ' stops checked in';
+    huntFillEl.style.width = (n / STOPS.length * 100) + '%';
+    huntTimeEl.textContent = !hunt.start
+      ? 'The clock starts at your first check-in.'
+      : (nx ? dur(Date.now() - hunt.start) + ' on the board so far.'
+            : 'Board closed in ' + dur((hunt.solved[STOPS[STOPS.length - 1].id] || Date.now()) - hunt.start) + '.');
+    STOPS.forEach(function (s) {
+      var card = huntEl.querySelector('[data-stop="' + s.id + '"]');
+      if (!card) return;
+      var done = typeof hunt.solved[s.id] === 'number';
+      var open = !done && nx && nx.id === s.id;
+      card.className = 'clue' + (done ? ' is-done' : (open ? ' is-next' : ' is-shut'));
+      card.querySelectorAll('input,button').forEach(function (el) { el.disabled = !open; });
+      card.querySelector('.clue-riddle').textContent = done || open ? s.riddle
+        : 'Locked until stop ' + (openForIndex(s) ) + ' is cleared.';
+      card.querySelector('.clue-print').hidden = !(done || open);
+      if (done) card.querySelector('.clue-out').textContent = 'Cleared at ' + clock(hunt.solved[s.id]) +
+        (hunt.start ? ' · ' + dur(hunt.solved[s.id] - hunt.start) + ' into the board.' : '.');
+    });
+    drawHuntPins();
+    if (!huntSel) {
+      huntInfoEl.textContent = huntNote || 'Tap a stop on the plan to read its clue.';
+    }
+  }
+
+  function openForIndex(s) {
+    for (var i = 0; i < STOPS.length; i++) if (STOPS[i].id === s.id) return i > 0 ? STOPS[i - 1].n : '01';
+    return '01';
+  }
+
+  document.querySelector('[data-hunt-reset]').addEventListener('click', function () {
+    hunt = { solved: {}, start: null };
+    huntSel = null;
+    persistHunt();
+    huntEl.querySelectorAll('input').forEach(function (i) { i.value = ''; });
+    huntEl.querySelectorAll('.clue-out').forEach(function (o) { o.textContent = ''; });
+    drawHunt();
+    huntInfoEl.textContent = 'Board reset — stop 01 is open again.';
+  });
+
+  window.setInterval(function () {
+    if (document.hidden || !hunt.start || !nextStop()) return;
+    if (!document.getElementById('p-os-engage').classList.contains('is-on')) return;
+    huntTimeEl.textContent = dur(Date.now() - hunt.start) + ' on the board so far.';
+  }, 1000);
+
+  /* ============================================================
+     engage — alumni and recruiter board
+     ============================================================ */
+  var NET_KEY = 'tf-net';
+
+  /* invented profiles: handles only, employers described rather than named */
+  var NET = [
+    { id: 'n1', kind: 'alum', handle: '@fourth_year', who: 'Alumni, 2018 · Mechanical',
+      org: 'a satellite propulsion team, Bengaluru',
+      ask: 'Mentors two crews a year and replies to build-log questions.',
+      tags: ['Aerospace', 'Mentoring', 'Hardware'] },
+    { id: 'n2', kind: 'alum', handle: '@null_terminal', who: 'Alumni, 2021 · Computer',
+      org: 'a payments engineering team, Pune',
+      ask: 'Runs a Saturday practice set for ContextCon entrants.',
+      tags: ['Software', 'Mentoring', 'Hiring'] },
+    { id: 'n3', kind: 'rec', handle: '@campus_hire_desk', who: 'Recruiter, early-career programmes',
+      org: 'a semiconductor design house, Noida',
+      ask: 'Wants six interns who have documented a hardware build.',
+      tags: ['Hardware', 'Hiring'] },
+    { id: 'n4', kind: 'alum', handle: '@solder_and_say', who: 'Alumni, 2016 · Electronics',
+      org: 'an agritech robotics startup, Hyderabad',
+      ask: 'Judges the RoboReach bracket and gives teardown feedback.',
+      tags: ['Hardware', 'Mentoring'] },
+    { id: 'n5', kind: 'rec', handle: '@people_first_ai', who: 'Recruiter, applied AI',
+      org: 'a modelling services firm, remote-first',
+      ask: 'Collects hackathon repos with a written rationale, not just a demo.',
+      tags: ['Software', 'Hiring'] },
+    { id: 'n6', kind: 'alum', handle: '@exhibit_one', who: 'Alumni, 2014 · Production',
+      org: 'a museum fabrication studio, Ahmedabad',
+      ask: 'Helps TechExpo booths with rigging, print and booth layout.',
+      tags: ['Design', 'Mentoring'] },
+    { id: 'n7', kind: 'rec', handle: '@growth_desk_ind', who: 'Recruiter, product marketing',
+      org: 'a consumer app company, Mumbai',
+      ask: 'Looks for delegates who ran a college event, not only internships.',
+      tags: ['Business', 'Hiring'] },
+    { id: 'n8', kind: 'alum', handle: '@night_shift_uav', who: 'Alumni, 2020 · Aerospace',
+      org: 'a survey drone operator, Delhi NCR',
+      ask: 'Answers BVLOS link-budget questions from the drone track.',
+      tags: ['Aerospace', 'Hardware', 'Mentoring'] }
+  ];
+
+  var NET_FILTERS = ['All', 'Alumni', 'Recruiters', 'Mentoring', 'Hiring', 'Hardware', 'Software', 'Design', 'Aerospace', 'Business'];
+
+  var net = { asks: [], filt: 'All', q: '' };
+  try {
+    var nraw = JSON.parse(localStorage.getItem(NET_KEY));
+    if (nraw && Array.isArray(nraw.asks)) {
+      net.asks = nraw.asks.filter(function (id) {
+        for (var i = 0; i < NET.length; i++) if (NET[i].id === id) return true;
+        return false;
+      });
+    }
+  } catch (e) {}
+
+  function persistNet() {
+    try { localStorage.setItem(NET_KEY, JSON.stringify({ asks: net.asks })); } catch (e) {}
+  }
+  function profile(id) {
+    for (var i = 0; i < NET.length; i++) if (NET[i].id === id) return NET[i];
+    return null;
+  }
+  function asked(id) { return net.asks.indexOf(id) > -1; }
+
+  var netListEl = document.querySelector('[data-net-list]');
+  var netChipsEl = document.querySelector('[data-net-chips]');
+  var netNoneEl = document.querySelector('[data-net-none]');
+  var netStatus = document.querySelector('[data-net-status]');
+  var netFilterEl = document.querySelector('[data-net-filters]');
+  var netQEl = document.querySelector('[data-net-q]');
+
+  function buildNetFilters() {
+    NET_FILTERS.forEach(function (f) {
+      var b = node('button', 'filt');
+      b.type = 'button';
+      b.textContent = f;
+      b.dataset.filt = f;
+      b.setAttribute('aria-pressed', String(f === net.filt));
+      netFilterEl.appendChild(b);
+      b.addEventListener('click', function () {
+        net.filt = f;
+        netFilterEl.querySelectorAll('.filt').forEach(function (x) {
+          x.setAttribute('aria-pressed', String(x.dataset.filt === f));
+        });
+        renderNet();
+      });
+    });
+  }
+
+  function matchesNet(p) {
+    if (net.filt !== 'All') {
+      if (net.filt === 'Alumni' && p.kind !== 'alum') return false;
+      if (net.filt === 'Recruiters' && p.kind !== 'rec') return false;
+      if (net.filt !== 'Alumni' && net.filt !== 'Recruiters' && p.tags.indexOf(net.filt) < 0) return false;
+    }
+    if (!net.q) return true;
+    var hay = (p.handle + ' ' + p.who + ' ' + p.org + ' ' + p.ask + ' ' + p.tags.join(' ')).toLowerCase();
+    return hay.indexOf(net.q) > -1;
+  }
+
+  function renderNet() {
+    var shown = 0;
+    netListEl.textContent = '';
+    NET.forEach(function (p) {
+      if (!matchesNet(p)) return;
+      shown++;
+      var li = node('li', 'np');
+      var top = node('p', 'np-top');
+      top.appendChild(node('b', null, p.handle));
+      top.appendChild(node('span', 'np-kind' + (p.kind === 'rec' ? ' rec' : ''), p.kind === 'rec' ? 'Recruiter' : 'Alumni'));
+      li.appendChild(top);
+      li.appendChild(node('p', 'np-who', p.who));
+      li.appendChild(node('p', 'np-org', p.org));
+      li.appendChild(node('p', 'np-ask', p.ask));
+      var tags = node('div', 'np-tags');
+      p.tags.forEach(function (t) { tags.appendChild(node('i', null, t)); });
+      li.appendChild(tags);
+      var act = node('div', 'np-act');
+      var btn = node('button', 'btn btn-ghost btn-sm');
+      btn.type = 'button';
+      btn.textContent = asked(p.id) ? 'Intro requested' : 'Ask for an intro';
+      btn.setAttribute('aria-pressed', String(asked(p.id)));
+      btn.addEventListener('click', function () { toggleAsk(p.id); });
+      act.appendChild(btn);
+      li.appendChild(act);
+      netListEl.appendChild(li);
+    });
+    if (!shown) {
+      var empty = node('li', 'net-empty', 'No profile on the board matches that screen. Try All, or clear the search.');
+      netListEl.appendChild(empty);
+    }
+    renderNetSaved();
+  }
+
+  function renderNetSaved() {
+    netChipsEl.textContent = '';
+    net.asks.forEach(function (id) {
+      var p = profile(id);
+      if (!p) return;
+      var chip = node('li', 'net-chip');
+      chip.appendChild(document.createTextNode(p.handle + ' · ' + (p.kind === 'rec' ? 'recruiter' : 'alumni')));
+      var x = node('button');
+      x.type = 'button';
+      x.textContent = '\u00d7';
+      x.setAttribute('aria-label', 'Withdraw the intro request for ' + p.handle);
+      x.addEventListener('click', function () { toggleAsk(id); });
+      chip.appendChild(x);
+      netChipsEl.appendChild(chip);
+    });
+    netNoneEl.hidden = !!net.asks.length;
+  }
+
+  function toggleAsk(id) {
+    var p = profile(id);
+    var i = net.asks.indexOf(id);
+    if (i > -1) {
+      net.asks.splice(i, 1);
+      netStatus.textContent = 'Withdrew the request for ' + p.handle + '. Nothing was sent anywhere.';
+    } else {
+      net.asks.push(id);
+      netStatus.textContent = 'Saved ' + p.handle + ' as a request. A real intro needs both sides to opt in, and a verified account to read this row.';
+    }
+    persistNet();
+    renderNet();
+  }
+
+  netQEl.addEventListener('input', function () {
+    net.q = netQEl.value.trim().toLowerCase();
+    renderNet();
+  });
+  document.querySelector('[data-net-clear]').addEventListener('click', function () {
+    net.asks = [];
+    persistNet();
+    renderNet();
+    netStatus.textContent = 'List cleared.';
+  });
+
   /* ---------- boot ---------- */
   buildControls();
   buildFilters();
@@ -1532,6 +1947,11 @@
   markList();
   buildTests();
   buildSamples();
+
+  buildHunt();
+  drawHunt();
+  buildNetFilters();
+  renderNet();
 
   qEl.addEventListener('input', function () {
     mapQuery = qEl.value.trim().toLowerCase();

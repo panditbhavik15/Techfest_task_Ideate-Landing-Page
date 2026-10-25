@@ -7,7 +7,7 @@
 <meta name="description" content="Techfest, IIT Bombay — the 30th edition of Asia's largest science and technology festival. Competitions, workshops, lectures, exhibitions and entertainment on the IIT Bombay campus.">
 <meta name="theme-color" content="#0A0A0C">
 <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="css/styles.css?v=14">
+<link rel="stylesheet" href="css/styles.css?v=15">
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -477,6 +477,12 @@
             </span>
             <b>Judging</b><small>Rubric · code runner</small>
           </button>
+          <button role="tab" id="tab-os-engage" aria-controls="p-os-engage" aria-selected="false" class="tab" tabindex="-1" data-tab="engage">
+            <span class="tab-i" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M12 21s-6.4-5.3-6.4-9.6A6.4 6.4 0 0 1 12 5a6.4 6.4 0 0 1 6.4 6.4C18.4 15.7 12 21 12 21Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 8.6l1.1 2.2 2.4.3-1.8 1.6.5 2.4-2.2-1.3-2.2 1.3.5-2.4-1.8-1.6 2.4-.3L12 8.6Z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+            </span>
+            <b>Engage</b><small>Treasure hunt · network</small>
+          </button>
         </div>
 
         <div class="panels">
@@ -750,6 +756,88 @@
               </section>
             </div>
           </div>
+
+          <!-- ============ ENGAGE ============ -->
+          <div role="tabpanel" id="p-os-engage" aria-labelledby="tab-os-engage" class="panel" tabindex="0" hidden>
+            <div class="panel-top">
+              <h3>Engage: keep the crowd moving, then keep them talking</h3>
+              <p>A fest is busiest between the events. This is the campus-wide hunt that pulls a delegate across the map, and the alumni-and-recruiter board that stays useful after the last ceremony.</p>
+            </div>
+
+            <div class="mods">
+              <section class="mod" aria-labelledby="hunt-h">
+                <header class="mod-head">
+                  <h4 id="hunt-h">Campus treasure hunt</h4>
+                  <p class="mod-tag">six stops · sample placards</p>
+                </header>
+
+                <div class="hunt">
+                  <ul class="clues" data-hunt-stops></ul>
+                  <div class="hunt-side">
+                    <div class="hunt-prog">
+                      <p class="hunt-count" data-hunt-count>0 of 6 stops checked in</p>
+                      <p class="hunt-bar"><i data-hunt-fill></i></p>
+                      <p class="hunt-time" data-hunt-time>The clock starts at your first check-in.</p>
+                    </div>
+                    <div class="map">
+                      <svg class="floorplan" viewBox="0 0 640 400" role="img" aria-label="The same sample campus plan, with the six hunt stops marked along the central walk street.">
+                        <rect class="p-street" x="16" y="196" width="608" height="28" rx="14"></rect>
+                        <path class="p-line" d="M16 210h608"></path>
+                        <g class="p-blocks">
+                          <rect x="96" y="66" width="120" height="96" rx="10"></rect>
+                          <rect x="280" y="30" width="140" height="90" rx="10"></rect>
+                          <rect x="430" y="80" width="150" height="100" rx="10"></rect>
+                          <rect x="190" y="240" width="130" height="90" rx="10"></rect>
+                          <rect x="470" y="250" width="140" height="90" rx="10"></rect>
+                          <rect x="300" y="300" width="120" height="70" rx="10"></rect>
+                        </g>
+                        <g class="p-lbl" aria-hidden="true">
+                          <text x="156" y="156">ARENA</text>
+                          <text x="350" y="116">CONVOCATION</text>
+                          <text x="505" y="176">TECHEXPO</text>
+                          <text x="255" y="326">LABS</text>
+                          <text x="540" y="336">STAGE</text>
+                          <text x="360" y="366">FOOD</text>
+                        </g>
+                        <polyline class="route" data-hunt-route points=""></polyline>
+                      </svg>
+                      <div class="pins" data-hunt-pins></div>
+                    </div>
+                    <p class="map-info" data-hunt-info>Tap a stop on the plan to read its clue.</p>
+                    <div class="mm-foot">
+                      <button class="btn btn-ghost btn-sm" type="button" data-hunt-reset>Reset the hunt</button>
+                    </div>
+                  </div>
+                </div>
+                <p class="mod-note"><b>Needs a backend.</b> A live hunt needs a stamped proof at each stop &mdash; a QR on the placard, a geofence, or a volunteer&rsquo;s tap &mdash; plus a server that refuses a code before its clue is opened, so nobody solves the finale from a bus. Here the placard code is printed on the card so you can actually play it, your progress is stored on this device, and the route line is drawn from the stops you have cleared.</p>
+              </section>
+
+              <section class="mod" aria-labelledby="net-h">
+                <header class="mod-head">
+                  <h4 id="net-h">Alumni &amp; recruiter board</h4>
+                  <p class="mod-tag">written for this review</p>
+                </header>
+
+                <div class="net-tools">
+                  <label class="fld net-search">Search the board
+                    <input type="search" maxlength="40" data-net-q placeholder="Role, city, what they offer" autocomplete="off">
+                  </label>
+                  <div class="filters net-filters" role="group" aria-label="Screen the board" data-net-filters></div>
+                </div>
+                <ul class="net-list" data-net-list></ul>
+                <div class="net-saved" data-net-saved>
+                  <p class="net-saved-h">Intros you asked for</p>
+                  <ul class="net-chips" data-net-chips></ul>
+                  <p class="net-none" data-net-none>Nothing asked for yet — a saved row is only a request.</p>
+                  <p class="mod-live" data-net-status aria-live="polite"></p>
+                  <div class="mm-foot">
+                    <button class="btn btn-ghost btn-sm" type="button" data-net-clear>Clear the list</button>
+                  </div>
+                </div>
+                <p class="mod-note"><b>Needs a backend.</b> A real board needs an identity check on the alumni side, an employer-side verification, and a double opt-in before anyone&rsquo;s contact details move &mdash; a saved row is a request, never an introduction. These eight profiles are invented for this review: handles only, no photographs, and employers described rather than named.</p>
+              </section>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -934,7 +1022,7 @@
   </div>
 </footer>
 
-<script src="js/main.js?v=14"></script>
-<script src="js/platform.js?v=14"></script>
+<script src="js/main.js?v=15"></script>
+<script src="js/platform.js?v=15"></script>
 </body>
 </html>
