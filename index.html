@@ -7,7 +7,7 @@
 <meta name="description" content="Techfest, IIT Bombay — the 30th edition of Asia's largest science and technology festival. Competitions, workshops, lectures, exhibitions and entertainment on the IIT Bombay campus.">
 <meta name="theme-color" content="#0A0A0C">
 <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="css/styles.css?v=9">
+<link rel="stylesheet" href="css/styles.css?v=12">
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -34,7 +34,7 @@
       <a href="https://techfest.org/workshops" target="_blank" rel="noopener">Workshops</a>
       <a href="https://techfest.org/ignite" target="_blank" rel="noopener">Ignite</a>
       <a href="#zonals">Zonals</a>
-      <a href="https://techfest.org/contactus" target="_blank" rel="noopener">Contact</a>
+      <a href="#fest-os">Fest OS</a>
     </nav>
 
     <div class="head-act">
@@ -72,6 +72,7 @@
     <a href="https://techfest.org/workshops" target="_blank" rel="noopener">Workshops</a>
     <a href="https://techfest.org/ignite" target="_blank" rel="noopener">Ignite</a>
     <a href="#zonals">Zonals</a>
+    <a href="#fest-os">Fest OS</a>
     <a href="https://techfest.org/accommodation" target="_blank" rel="noopener">Accommodation</a>
     <a href="https://techfest.org/contactus" target="_blank" rel="noopener">Contact</a>
   </div>
@@ -446,6 +447,106 @@
     </div>
   </section>
 
+  <!-- ============ FEST OS ============ -->
+  <section class="os" id="fest-os">
+    <div class="wrap">
+      <header class="sec-head">
+        <p class="eyebrow"><span class="rule" aria-hidden="true"></span> Inside the platform</p>
+        <h2 class="sec-h">The fest has an operating system too.</h2>
+        <p class="sec-sub">Between the arena and the expo floor, a thirtieth edition has to crew up teams, hold a schedule, judge fairly, keep a crowd moving and pay the winners. These are those services as clickable prototypes.</p>
+        <p class="os-note"><span class="os-tag">Prototype</span> Every module runs in your browser on sample records written for this review: no account, no server, and nothing you type leaves this device. Each one states what a live deployment would need.</p>
+      </header>
+
+      <div class="os-shell disc-shell">
+        <div class="tabs" role="tablist" aria-label="Platform modules">
+          <button role="tab" id="tab-os-crew" aria-controls="p-os-crew" aria-selected="true" class="tab" tabindex="0" data-tab="crew">
+            <span class="tab-i" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M16 8.5a2.8 2.8 0 1 0-1.4-5.2M17 20a5 5 0 0 0-2.2-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            </span>
+            <b>Crew</b><small>Teammates + team chat</small>
+          </button>
+        </div>
+
+        <div class="panels">
+          <!-- ============ CREW ============ -->
+          <div role="tabpanel" id="p-os-crew" aria-labelledby="tab-os-crew" class="panel is-on" tabindex="0">
+            <div class="panel-top">
+              <h3>Crew: find a teammate, then talk to them</h3>
+              <p>Most entries want three to six people with different skills, and the hard part is rarely the robot — it is finding the person who can solder it. This is the matchmaking card a delegate publishes, and the thread it opens.</p>
+            </div>
+
+            <div class="mods">
+              <section class="mod" aria-labelledby="mm-h">
+                <header class="mod-head">
+                  <h4 id="mm-h">Find a teammate</h4>
+                  <p class="mod-tag">sample pool</p>
+                </header>
+
+                <form class="mm" data-mm>
+                  <div class="mm-row">
+                    <label class="fld">Name or handle
+                      <input type="text" name="name" maxlength="26" placeholder="Shown on your card" autocomplete="off" required>
+                    </label>
+                    <label class="fld">City or college
+                      <input type="text" name="city" maxlength="30" placeholder="Optional" autocomplete="off">
+                    </label>
+                  </div>
+                  <fieldset class="mm-set">
+                    <legend>What you build</legend>
+                    <div class="chips" data-mm-skills></div>
+                  </fieldset>
+                  <div class="mm-row">
+                    <label class="fld">You want to join
+                      <select name="lane" data-mm-lane></select>
+                    </label>
+                    <label class="fld">You are looking for
+                      <select name="need" data-mm-need>
+                        <option>A team to enter with</option>
+                        <option>Solo entrants to form a team</option>
+                        <option>A mentor for our build</option>
+                        <option>Co-builders only, no entry yet</option>
+                      </select>
+                    </label>
+                  </div>
+                  <div class="mm-foot">
+                    <button class="btn btn-gold btn-sm" type="submit">Publish my card</button>
+                    <button class="btn btn-ghost btn-sm" type="reset" data-mm-reset>Clear</button>
+                  </div>
+                  <p class="mod-live" data-mm-status aria-live="polite"></p>
+                </form>
+
+                <div class="filters" role="group" aria-label="Screen the pool by skill" data-filters></div>
+                <ul class="pool" data-pool></ul>
+                <p class="mod-note"><b>Needs a backend.</b> Live matching means accounts, a verification step and a moderator who can take down fake listings. In this prototype the six cards are written for the review, and the card you publish is stored only in this browser.</p>
+              </section>
+
+              <section class="mod" aria-labelledby="chat-h">
+                <header class="mod-head">
+                  <h4 id="chat-h">In-app team chat</h4>
+                  <p class="mod-tag">stored on this device</p>
+                </header>
+                <div class="channels" role="group" aria-label="Your threads" data-channels></div>
+                <div class="chat">
+                  <div class="chat-top">
+                    <p class="chat-name" data-chat-name>No thread open</p>
+                    <p class="chat-sub" data-chat-sub></p>
+                  </div>
+                  <ul class="chat-log" data-chat-log aria-live="polite" aria-relevant="additions"></ul>
+                  <form class="chat-form" data-chat-form>
+                    <label class="sr-only" for="chat-msg">Message for this thread</label>
+                    <input id="chat-msg" type="text" maxlength="240" placeholder="Write to your team" autocomplete="off" disabled>
+                    <button class="btn btn-gold btn-sm" type="submit" disabled>Send</button>
+                  </form>
+                </div>
+                <p class="mod-note"><b>Needs a backend.</b> Real threads need presence, history across devices, file handoff and push so a pit crew can call a sub in from the arena. Threads here persist so you can feel the shape of the flow, and any reply the prototype makes is tagged as a demo reply.</p>
+              </section>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- ============ ZONALS ============ -->
   <section class="zonals" id="zonals">
     <div class="wrap">
@@ -592,6 +693,7 @@
       <h3>Visit</h3>
       <a href="https://techfest.org/accommodation" target="_blank" rel="noopener">Accommodation</a>
       <a href="#zonals">Zonal cities</a>
+      <a href="#fest-os">Fest OS prototypes</a>
       <a href="#discover">What&rsquo;s on</a>
       <a href="https://techfest.org/contactus" target="_blank" rel="noopener">Contact us</a>
     </nav>
@@ -624,6 +726,7 @@
   </div>
 </footer>
 
-<script src="js/main.js?v=9"></script>
+<script src="js/main.js?v=12"></script>
+<script src="js/platform.js?v=12"></script>
 </body>
 </html>

@@ -449,6 +449,94 @@ html.motion-on .phase-mark:not(:disabled):hover .up{transform:translateY(-2px)}
 .feat-visual svg{transform:translate3d(0,var(--py,0),0)}
 
 /* ============================================================
+   platform modules (Fest OS)
+   Shared primitives first: section shell, one module card, form
+   controls, chips. Built on the same glass tokens so a module
+   cannot look like a different product than the page it sits in.
+   ============================================================ */
+.os{padding-block:clamp(70px,10vw,130px);border-block:1px solid var(--line-2);background:
+  radial-gradient(70% 55% at 88% 4%,rgba(255,215,0,.07),transparent 62%),var(--ink-2)}
+.os .sec-head{margin-bottom:clamp(24px,3.4vw,40px)}
+.os .sec-h{max-width:24ch}
+.os-note{margin-top:18px;max-width:72ch;font-size:.86rem;color:var(--haze);border:1px dashed rgba(255,215,0,.4);border-radius:12px;padding:13px 16px;background:rgba(255,215,0,.045)}
+.os-tag{display:inline-block;margin-right:10px;padding:3px 9px;border-radius:999px;background:var(--gold);color:#141200;font-size:.6rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;vertical-align:2px}
+.os .panels{min-height:0}
+.mods{display:grid;gap:16px}
+
+.mod{position:relative;isolation:isolate;overflow:hidden;padding:clamp(16px,2.2vw,24px);border:1px solid var(--edge);border-radius:var(--r);background:var(--glass),rgba(18,19,26,.78);box-shadow:var(--gloss)}
+.mod-head{display:flex;align-items:baseline;justify-content:space-between;gap:14px;flex-wrap:wrap;padding-bottom:14px;margin-bottom:16px;border-bottom:1px solid var(--line)}
+.mod-head h4{font-size:1.06rem;letter-spacing:-.01em}
+.mod-tag{font-size:.6rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);opacity:.9}
+.mod-note{margin-top:16px;font-size:.8rem;line-height:1.6;color:var(--haze)}
+.mod-note b{color:var(--gold);font-weight:700;letter-spacing:.02em}
+.mod-live{margin-top:12px;min-height:1.2em;font-size:.82rem;color:var(--gold)}
+
+/* ---------- form controls ---------- */
+.fld{display:grid;gap:7px;font-size:.66rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--haze-2)}
+.fld input,.fld select,.os textarea{width:100%;padding:11px 13px;border:1px solid var(--edge);border-radius:10px;background:rgba(10,11,16,.72);color:var(--paper);font:inherit;font-size:.92rem;letter-spacing:0;text-transform:none;transition:border-color .25s,background .25s}
+.fld input::placeholder,.os textarea::placeholder{color:var(--haze-2);text-transform:none;letter-spacing:.01em}
+.fld input:focus-visible,.fld select:focus-visible,.os textarea:focus-visible{outline:none;border-color:var(--gold);background:rgba(10,11,16,.95)}
+.fld select{appearance:none;-webkit-appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--gold) 50%),linear-gradient(135deg,var(--gold) 50%,transparent 50%);background-position:calc(100% - 17px) calc(50% + 1px),calc(100% - 12px) calc(50% + 1px);background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:34px}
+.mm-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.mm-set{margin:0 0 14px;padding:0;border:0}
+.mm-set legend{font-size:.66rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--haze-2);margin-bottom:9px}
+.mm-foot{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+/* the pill is the span, not the label: the checkbox is clipped, so :checked
+   + span styles the visible state without needing :has() */
+.chip{position:relative;display:inline-flex;cursor:pointer}
+.chip input{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.chip span{display:inline-flex;align-items:center;min-height:26px;padding:5px 12px;border:1px solid var(--edge);border-radius:999px;font-size:.78rem;color:var(--haze);transition:border-color .2s,color .2s,background .2s}
+.chip:hover span{border-color:rgba(255,215,0,.5);color:var(--paper)}
+.chip input:checked + span{background:var(--gold);border-color:var(--gold);color:#141200}
+.chip input:focus-visible + span{outline:2px solid var(--gold);outline-offset:3px}
+.filters{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin-bottom:14px;font-size:.66rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--haze-2)}
+.filt{padding:5px 11px;border:1px solid var(--edge);border-radius:999px;font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:none;color:var(--haze);transition:border-color .2s,color .2s,background .2s}
+.filt:hover{border-color:rgba(255,215,0,.5);color:var(--paper)}
+.filt[aria-pressed="true"]{background:var(--gold-dim);border-color:rgba(255,215,0,.55);color:var(--gold)}
+
+/* ---------- teammate pool ---------- */
+.pool{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(232px,1fr))}
+.pl{display:grid;gap:8px;align-content:start;padding:15px;border:1px solid var(--line);border-radius:12px;background:rgba(12,13,18,.7)}
+.pl.is-you{border-color:rgba(255,215,0,.55);background:linear-gradient(150deg,rgba(255,215,0,.1),rgba(12,13,18,.8))}
+.pl-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.pl-top b{font-size:.98rem;letter-spacing:-.01em}
+.pl-top span{font-size:.6rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
+.pl-where{font-size:.78rem;color:var(--haze-2)}
+.pl-skills{display:flex;flex-wrap:wrap;gap:5px}
+.pl-skills i{padding:2px 8px;border-radius:999px;background:rgba(255,255,255,.06);font-style:normal;font-size:.72rem;color:var(--haze)}
+.pl-need{font-size:.84rem;color:var(--paper)}
+.pl-need s{color:var(--haze-2)}
+.pl-act{display:flex;gap:8px;align-items:center;margin-top:2px}
+
+/* ---------- team chat ---------- */
+.channels{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px}
+.chan{display:inline-flex;align-items:center;gap:7px;min-height:26px;padding:5px 11px;border:1px solid var(--edge);border-radius:999px;font-size:.78rem;color:var(--haze);transition:border-color .2s,color .2s,background .2s}
+.chan:hover{border-color:rgba(255,215,0,.5);color:var(--paper)}
+.chan[aria-pressed="true"]{background:var(--gold-dim);border-color:rgba(255,215,0,.55);color:var(--gold)}
+.chan b{font-size:.66rem;font-weight:700;letter-spacing:.06em;padding:1px 6px;border-radius:999px;background:var(--gold);color:#141200}
+.chan b.is-quiet{background:rgba(255,255,255,.1);color:var(--haze-2)}
+/* minmax(0,1fr) column: without it a long message or the composer's intrinsic
+   width stretches the grid track past the module at phone sizes */
+.chat{display:grid;grid-template-columns:minmax(0,1fr);border:1px solid var(--line);border-radius:12px;overflow:hidden;background:rgba(10,11,16,.6)}
+.chat-top{display:grid;gap:3px;padding:13px 15px;border-bottom:1px solid var(--line);background:rgba(15,16,22,.7)}
+.chat-name{font-size:.94rem;font-weight:700;letter-spacing:-.01em}
+.chat-sub{font-size:.74rem;color:var(--haze-2)}
+.chat-log{display:grid;gap:9px;padding:15px;max-height:320px;overflow-y:auto;scrollbar-gutter:stable}
+.chat-log li{display:grid;gap:4px;max-width:82%}
+.chat-log li.me{justify-items:end}
+.msg-meta{font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--haze-2)}
+.msg-meta b{color:var(--gold);letter-spacing:.06em}
+.msg-body{padding:9px 13px;border-radius:12px;background:rgba(255,255,255,.07);color:var(--paper);font-size:.88rem;line-height:1.5;word-break:break-word}
+.me .msg-body{background:var(--gold-dim);border-bottom-right-radius:4px}
+.them .msg-body{border-bottom-left-radius:4px}
+.chat-empty{padding:22px 15px;font-size:.85rem;color:var(--haze-2)}
+.chat-form{display:flex;gap:9px;padding:12px 14px;border-top:1px solid var(--line);background:rgba(15,16,22,.7)}
+.chat-form input{flex:1;min-width:0;padding:10px 13px;border:1px solid var(--edge);border-radius:999px;background:rgba(10,11,16,.72);color:var(--paper);font:inherit;font-size:.9rem}
+.chat-form input:focus-visible{outline:none;border-color:var(--gold)}
+.chat-form input:disabled,.chat-form button:disabled{opacity:.5;cursor:not-allowed}
+
+/* ============================================================
    responsive
    ============================================================ */
 @media (max-width:1080px){
@@ -471,6 +559,8 @@ html.motion-on .phase-mark:not(:disabled):hover .up{transform:translateY(-2px)}
   .nav-btn{display:flex}
 }
 @media (max-width:560px){
+  .mm-row{grid-template-columns:1fr}
+  .chat-log{max-height:280px}
   /* icon-only, but the word stays as the accessible name */
   .nav-btn{padding:0 11px}
   .nav-lbl{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}

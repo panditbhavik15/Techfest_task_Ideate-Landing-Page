@@ -117,33 +117,41 @@
     });
   }
 
-  /* ---------- category tabs ---------- */
-  var tabs = Array.prototype.slice.call(document.querySelectorAll('[role="tab"]'));
-  function select(tab, focus) {
-    tabs.forEach(function (t) {
-      var on = t === tab;
-      t.setAttribute('aria-selected', String(on));
-      t.tabIndex = on ? 0 : -1;
-      var panel = document.getElementById(t.getAttribute('aria-controls'));
-      panel.classList.toggle('is-on', on);
-      panel.hidden = !on;
+  /* ---------- tabs, scoped per tablist ----------
+     Two tablists share this page (categories and platform modules), so the
+     roving tabindex and panel switching are wired group by group. */
+  document.querySelectorAll('[role="tablist"]').forEach(function (list) {
+    var tabs = Array.prototype.slice.call(list.querySelectorAll('[role="tab"]'));
+    if (!tabs.length) return;
+    function select(tab, focus) {
+      tabs.forEach(function (t) {
+        var on = t === tab;
+        t.setAttribute('aria-selected', String(on));
+        t.tabIndex = on ? 0 : -1;
+        var panel = document.getElementById(t.getAttribute('aria-controls'));
+        if (!panel) return;
+        panel.classList.toggle('is-on', on);
+        panel.hidden = !on;
+      });
+      if (focus) tab.focus();
+    }
+    tabs.forEach(function (tab, i) {
+      tab.addEventListener('click', function () { select(tab); });
+      tab.addEventListener('keydown', function (e) {
+        var next = null;
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = tabs[(i + 1) % tabs.length];
+        else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = tabs[(i - 1 + tabs.length) % tabs.length];
+        else if (e.key === 'Home') next = tabs[0];
+        else if (e.key === 'End') next = tabs[tabs.length - 1];
+        if (next) { e.preventDefault(); select(next, true); }
+      });
     });
-    if (focus) tab.focus();
-  }
-  tabs.forEach(function (tab, i) {
-    tab.addEventListener('click', function () { select(tab); });
-    tab.addEventListener('keydown', function (e) {
-      var next = null;
-      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = tabs[(i + 1) % tabs.length];
-      else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = tabs[(i - 1 + tabs.length) % tabs.length];
-      else if (e.key === 'Home') next = tabs[0];
-      else if (e.key === 'End') next = tabs[tabs.length - 1];
-      if (next) { e.preventDefault(); select(next, true); }
-    });
+    var chosen = list.querySelector('[aria-selected="true"]') || tabs[0];
+    select(chosen);
   });
 
   /* ---------- scroll reveal (rect based, no IO dependency) ---------- */
-  var revealSel = '.about-lead,.about-body,.about-card,.sec-head,.disc-shell,.feat-copy,.feat-visual,.z-note,.atmo-head,.tile,.cta-lead,.cta-card';
+  var revealSel = '.about-lead,.about-body,.about-card,.sec-head,.disc-shell,.feat-copy,.feat-visual,.z-note,.atmo-head,.tile,.cta-lead,.cta-card,.os-shell';
   var revealNodes = [];
   function checkReveal() {
     if (!motionOn) return;
