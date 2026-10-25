@@ -19,10 +19,12 @@
       motionBtn.setAttribute('aria-pressed', String(on));
       motionBtn.querySelector('.motion-lbl').textContent = on ? 'Motion on' : 'Motion off';
     }
-    if (!on) {
+    if (on) { startMarquee(); revealAll(); onScroll(); }
+    else {
+      stopMarquee();
+      revealAll();
       document.querySelectorAll('[data-par]').forEach(function (el) { el.style.removeProperty('--py'); });
     }
-    if (on) { startMarquee(); revealAll(); } else { stopMarquee(); revealAll(); }
   }
 
   if (motionBtn) {
@@ -201,11 +203,94 @@
     target.focus({ preventScroll: true });
   });
 
-  /* ---------- ambient sound (WebAudio, gesture-started, never remembered) ---------- */
+  /* ---------- ambient sound: drone bed + generative score ---------- */
   var soundBtn = document.querySelector('[data-sound-toggle]');
   var sound = null;
   var soundOn = false;
   var LEVEL = 0.055;
+
+  var BPM = 68;
+  var BEAT = 60 / BPM;
+  var BAR = BEAT * 4;
+  /* Am - F - C - G, one bar each, over the static A pedal in the drone */
+  var CHORDS = [[45, 48, 52], [41, 45, 48], [48, 52, 55], [43, 47, 50]];
+  var MELODY = [76, null, 72, 74];
+  var ARP = [0, 1, 2, 3, 2, 1, 3, 2];
+
+  function hz(note) { return 55 * Math.pow(2, (note - 33) / 12); }
+
+  function voice(ctx, dest, freq, at, dur, peak, type, cut) {
+    var o = ctx.createOscillator();
+    o.type = type;
+    o.frequency.value = freq;
+    var lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = cut;
+    lp.Q.value = 0.5;
+    var g = ctx.createGain();
+    g.gain.setValueAtTime(0, at);
+    g.gain.linearRampToValueAtTime(peak, at + Math.min(0.05, dur * 0.25));
+    g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+    o.connect(lp); lp.connect(g); g.connect(dest);
+    o.start(at);
+    o.stop(at + dur + 0.05);
+  }
+
+  function playBar(at, index) {
+    var ctx = sound.ctx, bus = sound.music, chord = CHORDS[index % CHORDS.length];
+    var i, n;
+
+    // sustained chord, slightly detuned across the three voices
+    for (i = 0; i < chord.length; i++) {
+      var o = ctx.createOscillator();
+      o.type = i === 2 ? 'sine' : 'triangle';
+      o.frequency.value = hz(chord[i] + 12);
+      o.detune.value = (i - 1) * 6;
+      var lp = ctx.createBiquadFilter();
+      lp.type = 'lowpass'; lp.frequency.value = 880;
+      var g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, at);
+      g.gain.linearRampToValueAtTime(0.15, at + BAR * 0.34);
+      g.gain.linearRampToValueAtTime(0.0001, at + BAR * 1.04);
+      o.connect(lp); lp.connect(g); g.connect(bus);
+      o.start(at); o.stop(at + BAR * 1.08);
+    }
+
+    // bass on beats 1 and 3
+    voice(ctx, bus, hz(chord[0] - 12), at, BEAT * 1.7, 0.4, 'sine', 300);
+    voice(ctx, bus, hz(chord[0] - 12), at + BEAT * 2, BEAT * 1.7, 0.3, 'sine', 300);
+
+    // arpeggio in eighths, one octave above the chord
+    for (i = 0; i < ARP.length; i++) {
+      n = chord[ARP[i] % chord.length] + (ARP[i] > 2 ? 12 : 0);
+      voice(ctx, bus, hz(n + 12), at + i * BEAT / 2, BEAT * 0.46, i % 2 ? 0.11 : 0.18, 'triangle', 2400);
+    }
+
+    // one long melodic note per bar, every other bar
+    var m = MELODY[index % MELODY.length];
+    if (m) voice(ctx, bus, hz(m), at + BEAT, BAR * 0.66, 0.16, 'sine', 3200);
+  }
+
+  var seq = { timer: null, bar: 0, next: 0 };
+  function pump() {
+    if (!sound) return;
+    var now = sound.ctx.currentTime, ahead = now + 1.4;
+    while (seq.next < ahead) {
+      playBar(seq.next, seq.bar);
+      seq.bar++;
+      seq.next += BAR;
+    }
+  }
+  function startSeq() {
+    if (!sound || seq.timer) return;
+    seq.next = sound.ctx.currentTime + 0.1;
+    seq.timer = window.setInterval(pump, 120);
+    pump();
+  }
+  function stopSeq() {
+    window.clearInterval(seq.timer);
+    seq.timer = null;
+  }
 
   function buildAmbience() {
     var AC = window.AudioContext || window.webkitAudioContext;
@@ -213,7 +298,13 @@
     var ctx = new AC();
     var out = ctx.createGain();
     out.gain.value = 0;
-    out.connect(ctx.destination);
+    // keep the summed score from clipping when chord tones land together
+    var comp = ctx.createDynamicsCompressor();
+    comp.threshold.value = -14;
+    comp.ratio.value = 4;
+    comp.attack.value = 0.008;
+    comp.release.value = 0.25;
+    out.connect(comp); comp.connect(ctx.destination);
 
     var lp = ctx.createBiquadFilter();
     lp.type = 'lowpass';
@@ -254,7 +345,12 @@
     noise.connect(bp); bp.connect(nGain); nGain.connect(out);
     noise.start();
 
-    return { ctx: ctx, out: out };
+    // the score sits below the bed so the drone still leads
+    var music = ctx.createGain();
+    music.gain.value = 0.8;
+    music.connect(out);
+
+    return { ctx: ctx, out: out, music: music };
   }
 
   function applySound(audible) {
@@ -267,7 +363,7 @@
     g.cancelScheduledValues(t);
     g.setValueAtTime(g.value, t);
     g.linearRampToValueAtTime(audible ? LEVEL : 0, t + (audible ? 1.6 : 0.7));
-    if (audible) sound.ctx.resume();
+    if (audible) { sound.ctx.resume(); startSeq(); } else { stopSeq(); }
   }
 
   if (soundBtn) {
@@ -286,7 +382,9 @@
   }
   // duck the ambience while the tab is hidden; restore it when the visitor returns
   document.addEventListener('visibilitychange', function () {
-    if (sound) applySound(!document.hidden && soundOn);
+    if (!sound) return;
+    if (document.hidden) { stopSeq(); applySound(false); }
+    else if (soundOn) applySound(true);
   });
 
   /* ---------- back to top ---------- */
