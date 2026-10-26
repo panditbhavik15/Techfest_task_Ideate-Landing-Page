@@ -62,6 +62,9 @@
       topBtn.disabled = y < 4;
     }
     spyRead();
+    /* a scroll under a still cursor moves the panel, not the light: repaint the
+       spotlight so it stays where the pointer actually is inside it */
+    if (lit) litQueue();
 
     if (motionOn) {
       var mid = window.innerHeight / 2;
@@ -103,6 +106,48 @@
   /* applyMotion only pumps onScroll when motion is on, so the rail needs its own
      first paint: at the top of the page the first dot is the current one */
   spyRead();
+
+  /* ---------- pointer spotlight ----------
+     One delegated listener on the document instead of a handler per card: the
+     page has well over a hundred glass surfaces and most of them are rebuilt by
+     the platform modules. Touch is skipped — a tap has no resting position to
+     light toward. */
+  var LIT = '.card,.cta-card,.about-card,.plan,.mod,.pl,.np,.pay,.jq,.tab';
+  var lit = null, litRaf = 0, litX = 0, litY = 0;
+
+  function litPaint() {
+    litRaf = 0;
+    if (!lit) return;
+    var box = lit.getBoundingClientRect();
+    if (!box.width || !box.height) return;
+    lit.style.setProperty('--gx', (((litX - box.left) / box.width) * 100).toFixed(1) + '%');
+    lit.style.setProperty('--gy', (((litY - box.top) / box.height) * 100).toFixed(1) + '%');
+  }
+
+  function litQueue() { if (!litRaf) litRaf = requestAnimationFrame(litPaint); }
+
+  function litSet(el) {
+    if (el === lit) return;
+    if (lit) {
+      lit.classList.remove('is-lit');
+      lit.style.removeProperty('--gx');
+      lit.style.removeProperty('--gy');
+    }
+    lit = el;
+    if (el) el.classList.add('is-lit');
+  }
+
+  document.addEventListener('pointermove', function (e) {
+    if (e.pointerType && e.pointerType !== 'mouse') return;
+    var t = e.target;
+    litSet(t && t.closest ? t.closest(LIT) : null);
+    if (!lit) return;
+    litX = e.clientX;
+    litY = e.clientY;
+    litQueue();
+  }, { passive: true });
+
+  document.documentElement.addEventListener('pointerleave', function () { litSet(null); });
 
   /* ---------- mobile nav ---------- */
   var navBtn = document.querySelector('[data-nav-toggle]');

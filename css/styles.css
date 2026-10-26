@@ -406,6 +406,25 @@ html.motion-on .phase-rail::after{opacity:.5}
 html.motion-on .plan::after{opacity:.34}
 @keyframes sheen{from{transform:translateX(-15%)}to{transform:translateX(15%)}}
 
+/* ---------- pointer spotlight ----------
+   The panel under the cursor carries --gx/--gy as percentages of its own box,
+   so the light belongs to the card rather than the viewport and survives both
+   the hover lift and a scroll underneath a stationary mouse. Negative z-index
+   inside the panel's isolation puts it over the glass and under the text. */
+.card::before,.cta-card::before,.about-card::before,.plan::before,.mod::before,.pl::before,.np::before,.pay::before,.jq::before,.tab::after{
+  content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:0;
+  border-radius:inherit;
+  background:radial-gradient(220px 170px at var(--gx,50%) var(--gy,50%),rgba(255,215,0,.13),rgba(163,190,255,.07) 40%,transparent 68%);
+  transition:opacity .4s var(--ease)
+}
+.card.is-lit::before,.cta-card.is-lit::before,.about-card.is-lit::before,.plan.is-lit::before,.mod.is-lit::before,.pl.is-lit::before,.np.is-lit::before,.pay.is-lit::before,.jq.is-lit::before,.tab.is-lit::after{opacity:1}
+
+/* the Fest OS rows had no stacking context of their own, so the light above
+   would have escaped behind the section instead of the panel */
+.pl,.np,.pay,.jq,.tab{position:relative;isolation:isolate}
+.pl,.np,.pay,.jq{transition:border-color .25s,background .25s,transform .3s var(--ease)}
+html.motion-on .pl:hover,html.motion-on .np:hover,html.motion-on .pay:hover,html.motion-on .jq:hover,html.motion-on .tab:hover{transform:translateY(-2px)}
+
 /* no backdrop-filter: the fills darken so the glass reads as a solid panel
    rather than a washed-out one */
 /* no backdrop-filter: the fills darken so the glass reads as a solid panel
