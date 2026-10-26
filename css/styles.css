@@ -299,7 +299,9 @@ html.motion-on .z-track[data-clone="1"]:hover .z-row{animation-play-state:paused
 /* ---------- atmosphere ---------- */
 .atmo{padding-block:clamp(70px,10vw,130px);border-block:1px solid var(--line-2);background:
   radial-gradient(46% 40% at 10% 6%,rgba(78,96,175,.17),transparent 66%),var(--ink-2)}
-.atmo-head{max-width:24ch;margin-bottom:clamp(28px,4vw,48px)}
+/* rem, not ch: this cap sits on the container, whose font-size is the body's 16px —
+   24ch here pinned the band to 250px at every width and broke the headline over. */
+.atmo-head{max-width:36rem;margin-bottom:clamp(28px,4vw,48px)}
 .atmo-head .sec-h{font-size:clamp(1.7rem,3.4vw,2.7rem)}
 .atmo-grid{display:grid;grid-template-columns:repeat(6,1fr);grid-auto-rows:minmax(120px,auto);gap:14px}
 .tile{position:relative;margin:0;overflow:hidden;border-radius:var(--r);border:1px solid var(--line);min-height:230px}
