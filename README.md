@@ -56,6 +56,35 @@ Text contrast was re-derived after the pass: translucent fills lighten every sur
 which pushed the secondary tone under 4.5:1 — hence `--haze-2: #93A0B3` and no `opacity` on the
 struck-through price. Worst real placement measures 4.83:1 with the sheen at its peak.
 
+## Depth and the pointer
+
+Three layers sit under and over that glass: a fixed **aurora** (three large radial washes in gold,
+`--cool` and `--violet`, plus per-section washes so each band has its own temperature), a **film
+grain** on `body::after` at 5.5% in `overlay`, and an 18px corner radius everywhere a panel meets
+the eye. The grain is above the content at `z-index:45` — under the sticky header, over everything
+else — and neither layer animates, so the depth survives reduced motion instead of being part of
+what the Motion switch gives back.
+
+A **section rail** of eight dots lives in the left gutter from 1080px. Names appear only from
+1440px, because below that an eight-character label would sit on the headline it points at; in
+between the label is clipped out of the layout and the hit area but stays the link's accessible
+name. The active dot is written by the same scroll pass that drives the progress line and the moon,
+after all eight rects have been read, so one scroll event costs one layout pass.
+
+Hovering a glass panel lights it from the cursor: one delegated `pointermove` listener writes
+`--gx`/`--gy` on the surface under the pointer, and a negative-z-index pseudo inside the panel's own
+`isolation` paints the radial over its glass and under its text. Coordinates are percentages of that
+box rather than the viewport, so the light holds its place through the hover lift and when the page
+scrolls under a still cursor. Touch is ignored — a tap has nowhere to rest. The spotlight is a
+colour change and stays on with motion off; the 2px lift that accompanies it is a movement and does
+not.
+
+Type got the same pass: the hero runs to 5.6rem at desktop widths with `line-height:.99`, section
+heads to 3.25rem, and `text-wrap:balance`/`pretty` keep short headings from orphaning a word. The
+accent word in the hero is gradient-clipped, inside `@supports (background-clip:text)` so an
+unsupported browser keeps the flat gold rule above it rather than an invisible word — and the glow
+is dropped in that block, since a `text-shadow` under transparent text paints as a solid blob.
+
 ## Motion
 
 Animations are gated behind `html.motion-on`, so nothing decorative moves unless JavaScript

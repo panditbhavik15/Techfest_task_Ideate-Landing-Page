@@ -68,8 +68,8 @@ li{list-style:none}
 /* ---------- type helpers ---------- */
 .eyebrow{display:flex;align-items:center;gap:12px;font-size:.72rem;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:var(--gold)}
 .eyebrow .rule{width:34px;height:1px;background:linear-gradient(90deg,var(--gold),transparent);flex:none}
-.sec-h{font-size:clamp(1.75rem,3.6vw,3rem);letter-spacing:-.03em}
-.sec-sub{color:var(--haze);max-width:56ch;margin-top:14px}
+.sec-h{font-size:clamp(1.9rem,3.9vw,3.25rem);letter-spacing:-.035em;text-wrap:balance}
+.sec-sub{color:var(--haze);max-width:56ch;margin-top:14px;text-wrap:pretty}
 .sec-head{margin-bottom:clamp(28px,4vw,48px)}
 .sec-head-row{display:grid;gap:22px}
 .txt-link{display:inline-block;color:var(--gold);font-weight:700;font-size:.9rem;letter-spacing:.01em;border-bottom:1px solid rgba(255,215,0,.35);padding-bottom:2px;transition:border-color .25s,color .25s}
@@ -82,9 +82,14 @@ li{list-style:none}
 .btn-gold{background:var(--gold);color:#141200;box-shadow:0 0 0 0 rgba(255,215,0,.45)}
 .btn-gold:hover{background:#ffe14d;box-shadow:0 12px 34px -12px rgba(255,215,0,.55)}
 .btn-ghost{border:1px solid rgba(255,255,255,.22);color:var(--paper)}
-.btn-ghost:hover{border-color:var(--gold);color:var(--gold)}
+.btn-ghost:hover{border-color:var(--gold);color:var(--gold);background:rgba(255,215,0,.07)}
 .btn-sm{padding:11px 18px;font-size:.8rem}
+.btn svg{transition:transform .3s var(--ease)}
 html.motion-on .btn:hover{transform:translateY(-2px)}
+html.motion-on .btn:hover svg{transform:translateX(3px)}
+/* after the hover rule, so a pressed button dips instead of holding the lift */
+.btn:active{transform:translateY(1px)}
+html.motion-on .btn:active{transform:translateY(1px)}
 .cta-row{display:flex;flex-wrap:wrap;gap:14px;margin-top:30px}
 
 /* ---------- header ---------- */
@@ -173,9 +178,15 @@ html.nav-open{overflow:hidden;scrollbar-gutter:stable}
     linear-gradient(90deg,rgba(10,10,12,.94) 0%,rgba(10,10,12,.6) 46%,rgba(10,10,12,.2) 100%);
 }
 .hero-grid{display:grid;grid-template-columns:minmax(0,1.28fr) minmax(0,.72fr);gap:clamp(28px,5vw,72px);align-items:end;padding-block:clamp(80px,12vh,140px) clamp(46px,7vh,74px)}
-.hero-copy h1{font-size:clamp(2.5rem,6.4vw,5.1rem);letter-spacing:-.045em;margin-top:20px;text-wrap:balance}
+.hero-copy h1{font-size:clamp(2.5rem,7.4vw,5.6rem);line-height:.99;letter-spacing:-.05em;margin-top:20px;text-wrap:balance}
 .hero-copy h1 em{font-style:normal;color:var(--gold);text-shadow:0 0 46px rgba(255,215,0,.3)}
-.lede{color:#D7D3C7;max-width:52ch;margin-top:22px;font-size:clamp(1rem,.4vw + .92rem,1.14rem)}
+/* The clip only replaces the flat gold where it actually works, so an
+   unsupported browser keeps the readable rule above. The glow is dropped in
+   this block because a shadow under transparent text fills as a solid blob. */
+@supports (background-clip:text) or (-webkit-background-clip:text){
+  .hero-copy h1 em{background:linear-gradient(96deg,var(--gold) 6%,#FFF3B0 46%,var(--gold-2) 92%);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none}
+}
+.lede{color:#D7D3C7;max-width:52ch;margin-top:22px;font-size:clamp(1rem,.4vw + .92rem,1.14rem);text-wrap:pretty}
 .hero-note{margin-top:22px;font-size:.78rem;color:var(--haze-2);letter-spacing:.02em}
 .hero-note a{color:var(--gold);border-bottom:1px solid rgba(255,215,0,.4)}
 .scroll-cue{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);font-size:.62rem;letter-spacing:.34em;text-transform:uppercase;color:var(--haze-2)}
