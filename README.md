@@ -1,4 +1,4 @@
-# Techfest 2026 — concept landing page
+# Techfest — concept landing page
 
 A single-page, dependency-free concept site for **Techfest, IIT Bombay** (30th edition,
 theme artwork "Farside", tagline "An Aetherial Renaissance"). Content is taken from the
