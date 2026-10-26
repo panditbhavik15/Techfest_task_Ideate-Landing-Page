@@ -61,6 +61,7 @@
       topBtn.classList.toggle('is-live', y > window.innerHeight * 0.45);
       topBtn.disabled = y < 4;
     }
+    spyRead();
 
     if (motionOn) {
       var mid = window.innerHeight / 2;
@@ -75,6 +76,33 @@
   }
   window.addEventListener('scroll', onScroll, { passive: true });
   window.addEventListener('resize', onScroll);
+
+  /* ---------- section rail ----------
+     Every rect is read before anything is written, so one scroll event costs a
+     single layout pass instead of eight read/write alternations. */
+  var spyLinks = Array.prototype.slice.call(document.querySelectorAll('.spy a'));
+  var spyTargets = spyLinks.map(function (a) { return document.querySelector(a.getAttribute('href')); });
+
+  function spyRead() {
+    if (!spyLinks.length) return;
+    var line = window.innerHeight * 0.34;
+    var idx = 0;
+    for (var i = 0; i < spyTargets.length; i++) {
+      if (spyTargets[i] && spyTargets[i].getBoundingClientRect().top <= line) idx = i;
+    }
+    spyWrite(idx);
+  }
+
+  function spyWrite(idx) {
+    for (var k = 0; k < spyLinks.length; k++) {
+      if (k === idx) spyLinks[k].setAttribute('aria-current', 'true');
+      else spyLinks[k].removeAttribute('aria-current');
+    }
+  }
+
+  /* applyMotion only pumps onScroll when motion is on, so the rail needs its own
+     first paint: at the top of the page the first dot is the current one */
+  spyRead();
 
   /* ---------- mobile nav ---------- */
   var navBtn = document.querySelector('[data-nav-toggle]');
