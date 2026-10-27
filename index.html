@@ -25,7 +25,7 @@
 <link rel="preload" href="assets/img/hero-farside.webp" as="image" fetchpriority="high">
 <link rel="preload" href="assets/fonts/space-grotesk-700.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/fonts/space-grotesk-400.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="css/styles.css?v=27">
+<link rel="stylesheet" href="css/styles.css?v=28">
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"Event","name":"Techfest, IIT Bombay","description":"Asia's largest science and technology festival, run entirely by students on the IIT Bombay campus: competitions, workshops, lectures, exhibitions and entertainment.","url":"https://techfest.org/","eventAttendanceMode":"https://schema.org/OfflineEventAttendanceMode","eventStatus":"https://schema.org/EventScheduled","image":"assets/img/og-farside.jpg","organizer":{"@type":"Organization","name":"Techfest, IIT Bombay","url":"https://techfest.org/"},"location":{"@type":"Place","name":"Indian Institute of Technology Bombay","address":{"@type":"PostalAddress","addressLocality":"Mumbai","addressRegion":"Maharashtra","addressCountry":"IN"}}}
 </script>
@@ -511,7 +511,7 @@
             <span class="tab-i" aria-hidden="true">
               <svg viewBox="0 0 24 24"><path d="M12 3v17M5 8h14M7 8l-3 6h6L7 8Zm10 0-3 6h6l-3-6ZM9 20h6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </span>
-            <b>Judging</b><small>Rubric · code runner</small>
+            <b>Judging</b><small>Rubric · verdicts</small>
           </button>
           <button role="tab" id="tab-os-engage" aria-controls="p-os-engage" aria-selected="false" class="tab" tabindex="-1" data-tab="engage">
             <span class="tab-i" aria-hidden="true">
@@ -719,8 +719,8 @@
           <!-- ============ JUDGING ============ -->
           <div role="tabpanel" id="p-os-judge" aria-labelledby="tab-os-judge" class="panel" tabindex="0" hidden>
             <div class="panel-top">
-              <h3>Judging: a score sheet, and a runner that does not lie</h3>
-              <p>A rubric only works if every judge is asked the same weighted questions, and an auto-checker only works if it can say &ldquo;this one never stopped&rdquo; instead of hanging the page. Both are here as clickable prototypes.</p>
+              <h3>Judging: one sheet, weighted the same for every judge</h3>
+              <p>A rubric only works when every judge is asked the same weighted questions and the same numbers add up the same way. This sheet is a clickable prototype: sample entries, editable weights, a verdict you can lock and export.</p>
             </div>
 
             <div class="mods">
@@ -763,38 +763,6 @@
                   </div>
                 </div>
                 <p class="mod-note"><b>Needs a backend.</b> A real portal needs judge accounts, conflict-of-interest declarations, a deadline that closes the sheet, an appeal window and an immutable audit trail — locking a verdict is only meaningful if the server refuses the rewrite. Here the four entries, the criteria and the weights are written for this review, and your sheet is saved in this browser only.</p>
-              </section>
-
-              <section class="mod" aria-labelledby="ce-h">
-                <header class="mod-head">
-                  <h4 id="ce-h">Automated code evaluation</h4>
-                  <p class="mod-tag">runs in a worker on this device</p>
-                </header>
-
-                <div class="ce">
-                  <div class="ce-q">
-                    <p class="ce-cap">Sample problem</p>
-                    <p class="ce-task">Return the sum of the even numbers in <code>nums</code>.</p>
-                    <pre class="ce-sig"><code>function sumEven(nums) { … }</code></pre>
-                    <p class="ce-cap">Try a submission</p>
-                    <div class="ce-samples" role="group" aria-label="Sample submissions" data-ce-load></div>
-                    <p class="ce-disc">The six cases are shown with their expected values because this is a review. A live contest would hide them and only score the run.</p>
-                  </div>
-
-                  <div class="ce-run">
-                    <label class="fld ce-code">JavaScript
-                      <textarea rows="8" spellcheck="false" autocomplete="off" data-ce-code></textarea>
-                    </label>
-                    <div class="mm-foot">
-                      <button class="btn btn-gold btn-sm" type="button" data-ce-run>Run the 6 cases</button>
-                      <button class="btn btn-ghost btn-sm" type="button" data-ce-stop hidden>Stop the runner</button>
-                      <p class="ce-sum" data-ce-sum aria-live="polite">Nothing has run yet.</p>
-                    </div>
-                    <ul class="tests" data-ce-tests></ul>
-                    <p class="mod-live" data-ce-status aria-live="polite"></p>
-                  </div>
-                </div>
-                <p class="mod-note"><b>Not a security boundary.</b> This runner puts the code in a Web Worker so a submission that loops forever cannot freeze the page, and it kills the worker after 1.5 seconds per case. That is all it does: a worker has no CPU, memory, network or filesystem limits, so a real evaluator has to run each submission in a container or a seccomp jail with a clock budget, an output cap and a per-team rate limit before it can decide anything.</p>
               </section>
             </div>
           </div>
@@ -1154,7 +1122,7 @@
   </div>
 </div>
 
-<script src="js/main.js?v=27"></script>
-<script src="js/platform.js?v=27"></script>
+<script src="js/main.js?v=28"></script>
+<script src="js/platform.js?v=28"></script>
 </body>
 </html>

@@ -266,8 +266,8 @@ tabindex and arrow-key behaviour for free.
 Everything in it is **sample data written for this review**. No module has a server, no record is
 real, nothing typed leaves the device: state lives in `localStorage` under `tf-crew`, `tf-live`,
 `tf-judge`, `tf-hunt`, `tf-net` and `tf-pay`. Each module ends with a `.mod-note` naming what a live
-deployment would need — an auth boundary, a payout instrument chosen after KYC, a container for the
-code runner.
+deployment would need — an auth boundary, a payout instrument chosen after KYC, a deadline that
+closes the sheet and refuses the rewrite.
 
 - **Crew** — a find-a-teammate form (skills, event lane, what you are still short of) against six
   invented builder profiles, and a pit-channel chat with unread badges and canned sample replies.
@@ -279,9 +279,7 @@ code runner.
 - **Judging** — a weighted rubric (Innovation 30 / Execution 30 / Documentation 20 / Presentation
   20) with 0–10 marks, live per-criterion points, a warning when the weights stop adding to 100
   since the score normalises across them, lock and unlock, and a CSV export that doubles every quote
-  inside a field. Beside it, an evaluator that compiles a submission in a Web Worker built from a
-  Blob and terminates it after 1.5 s per case — plus a note stating plainly that a worker has no CPU,
-  memory or network limits and is therefore not a security boundary.
+  inside a field.
 - **Engage** — a six-stop campus hunt whose placards unlock in order, drawn on the same floor plan
   with the walked route estimated in metres and minutes, and an alumni and recruiter board: eight
   profiles with no real names and employers described rather than named, search, ten filters, and

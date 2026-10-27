@@ -746,8 +746,8 @@ html.motion-on .pin.is-live::after{animation:blip 1.6s ease-in-out infinite}
 /* .btn sets display:inline-flex, which would beat the [hidden] attribute the
    same way it did for the mobile nav — restate it for anything in a footer row */
 .mm-foot [hidden]{display:none}
-.jd,.ce{display:grid;grid-template-columns:minmax(0,236px) minmax(0,1fr);gap:22px;align-items:start}
-.jd-cap,.ce-cap{margin-bottom:9px;font-size:.6rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--haze-2)}
+.jd{display:grid;grid-template-columns:minmax(0,236px) minmax(0,1fr);gap:22px;align-items:start}
+.jd-cap{margin-bottom:9px;font-size:.6rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--haze-2)}
 .jd-list{display:grid;gap:8px}
 .jq{display:grid;gap:4px;width:100%;padding:12px;border:1px solid var(--line);border-radius:11px;background:rgba(12,13,18,.6);text-align:left;transition:border-color .2s,background .2s}
 .jq:hover{border-color:rgba(255,215,0,.45)}
@@ -785,30 +785,6 @@ html.motion-on .pin.is-live::after{animation:blip 1.6s ease-in-out infinite}
 .jd-flag{align-self:start}
 .jd-form.is-locked{opacity:.72}
 .jd-form.is-locked .ru input,.jd-form.is-locked .ru-w,.jd-form.is-locked textarea,.jd-form.is-locked .jd-flag input{cursor:not-allowed}
-
-/* ---------- judging: code runner ---------- */
-.ce-q{display:grid;gap:10px;align-content:start;min-width:0}
-.ce-task{font-size:.94rem;line-height:1.5;color:var(--paper)}
-.ce-sig{padding:11px 13px;margin:0;border:1px solid var(--line);border-radius:10px;background:rgba(10,11,16,.6);overflow-x:auto}
-.ce-sig code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.78rem;color:var(--gold)}
-.ce-samples{display:grid;gap:7px}
-.ce-disc{font-size:.74rem;line-height:1.5;color:var(--haze-2)}
-.ce-run{display:grid;gap:15px;min-width:0}
-/* pre-wrap would wrap long lines inside the box and hide the indentation that
-   makes a submission readable; scroll the box instead */
-.ce-code textarea{min-height:184px;padding:13px 14px;border-radius:12px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.8rem;line-height:1.6;white-space:pre;overflow-x:auto;tab-size:2;resize:vertical}
-.ce-sum{flex:1 1 160px;min-width:0;font-size:.82rem;line-height:1.45;color:var(--haze)}
-.tests{display:grid;gap:7px}
-.tu{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 14px;align-items:center;padding:11px 13px;border:1px solid var(--line);border-radius:11px;background:rgba(12,13,18,.6)}
-.tu-name{font-size:.86rem;color:var(--paper)}
-.tu-io{grid-column:1/-1;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.74rem;line-height:1.5;color:var(--haze-2);overflow-wrap:anywhere}
-.tu-io b{color:var(--gold-2);font-weight:500}
-.tu-chip{grid-row:1/3;align-self:center;display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.07);color:var(--haze-2);font-size:.6rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;white-space:nowrap}
-/* the mark rides with the word so pass/fail never depends on colour alone */
-.tu-chip.pass{background:var(--gold);color:#141200}
-.tu-chip.fail{border:1px dashed var(--haze-2);background:none;color:var(--paper)}
-.tu-chip.time{border:1px solid var(--gold-2);background:none;color:var(--gold-2)}
-.tu.is-wait{opacity:.62}
 
 /* ---------- engage: campus treasure hunt ---------- */
 .hunt{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,330px);gap:22px;align-items:start}
@@ -952,7 +928,7 @@ html.motion-on .pin.is-live::after{animation:blip 1.6s ease-in-out infinite}
   .rd-h{grid-column:1/-1}
   /* the printed zone names fall under 6px at phone width; the pins carry them */
   .p-lbl{display:none}
-  .jd,.ce{grid-template-columns:minmax(0,1fr)}
+  .jd{grid-template-columns:minmax(0,1fr)}
   /* a rubric row is five controls: name, slider, mark, weight and points. Give
      the name and the slider the whole track so each stays a real target */
   .ru-name{flex:1 1 100%}
