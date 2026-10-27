@@ -25,7 +25,7 @@
 <link rel="preload" href="assets/img/hero-farside.webp" as="image" fetchpriority="high">
 <link rel="preload" href="assets/fonts/space-grotesk-700.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/fonts/space-grotesk-400.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="css/styles.css?v=22">
+<link rel="stylesheet" href="css/styles.css?v=23">
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"Event","name":"Techfest, IIT Bombay","description":"Asia's largest science and technology festival, run entirely by students on the IIT Bombay campus: competitions, workshops, lectures, exhibitions and entertainment.","url":"https://techfest.org/","eventAttendanceMode":"https://schema.org/OfflineEventAttendanceMode","eventStatus":"https://schema.org/EventScheduled","image":"assets/img/og-farside.jpg","organizer":{"@type":"Organization","name":"Techfest, IIT Bombay","url":"https://techfest.org/"},"location":{"@type":"Place","name":"Indian Institute of Technology Bombay","address":{"@type":"PostalAddress","addressLocality":"Mumbai","addressRegion":"Maharashtra","addressCountry":"IN"}}}
 </script>
@@ -947,23 +947,42 @@
 
       <div class="z-track" data-marquee>
         <ul class="z-row">
-          <li><b>Mumbai</b><span>IIT Bombay · 4 Oct</span></li>
-          <li><b>Nagpur</b><span>Priyadarshini COE · 3 Oct</span></li>
-          <li><b>Bhopal</b><span>SIRT · 4 Oct</span></li>
-          <li><b>Bangladesh</b><span>Dhaka UE&amp;T · 3 Oct</span></li>
-          <li><b>Delhi</b><span>South Asian University · 10 Oct</span></li>
-          <li><b>Chennai</b><span>Rajalakshmi IoT · 10 Oct</span></li>
-          <li><b>Gandhinagar</b><span>IIT Gandhinagar · 11 Oct</span></li>
-          <li><b>Hyderabad</b><span>JNTU · 11 Oct</span></li>
-          <li><b>Jaipur</b><span>SKIT &amp; Gramothan · 18 Oct</span></li>
-          <li><b>Patna</b><span>IIT Patna · 18 Oct</span></li>
-          <li><b>Bangalore</b><span>Global Academy of Technology · 24 Oct</span></li>
-          <li><b>Kochi</b><span>CUSAT · 31 Oct</span></li>
-          <li><b>Chandigarh</b><span>Punjab Engineering College · 31 Oct</span></li>
-          <li><b>Kanpur</b><span>CSJM University · 31 Oct</span></li>
+          <li data-zone="West"><b>Mumbai</b><span>IIT Bombay · 4 Oct</span></li>
+          <li data-zone="Central"><b>Nagpur</b><span>Priyadarshini COE · 3 Oct</span></li>
+          <li data-zone="Central"><b>Bhopal</b><span>SIRT · 4 Oct</span></li>
+          <li data-zone="International"><b>Bangladesh</b><span>Dhaka UE&amp;T · 3 Oct</span></li>
+          <li data-zone="North"><b>Delhi</b><span>South Asian University · 10 Oct</span></li>
+          <li data-zone="South"><b>Chennai</b><span>Rajalakshmi IoT · 10 Oct</span></li>
+          <li data-zone="West"><b>Gandhinagar</b><span>IIT Gandhinagar · 11 Oct</span></li>
+          <li data-zone="South"><b>Hyderabad</b><span>JNTU · 11 Oct</span></li>
+          <li data-zone="North"><b>Jaipur</b><span>SKIT &amp; Gramothan · 18 Oct</span></li>
+          <li data-zone="East"><b>Patna</b><span>IIT Patna · 18 Oct</span></li>
+          <li data-zone="South"><b>Bangalore</b><span>Global Academy of Technology · 24 Oct</span></li>
+          <li data-zone="South"><b>Kochi</b><span>CUSAT · 31 Oct</span></li>
+          <li data-zone="North"><b>Chandigarh</b><span>Punjab Engineering College · 31 Oct</span></li>
+          <li data-zone="North"><b>Kanpur</b><span>CSJM University · 31 Oct</span></li>
         </ul>
       </div>
-      <p class="z-note">Dates as listed on the official competitions page. <a href="https://techfest.org/competitions" target="_blank" rel="noopener">Verify your city →</a></p>
+
+      <!-- The ticker above is atmosphere. This is the part you actually use: the
+           same fourteen hosts, searchable, so a visitor can find their city
+           instead of waiting for it to drift past. -->
+      <div class="z-board">
+        <div class="z-tools">
+          <label class="fld z-q">City or institute
+            <input type="search" data-z-q placeholder="Try Kochi, or CUSAT" autocomplete="off" aria-controls="z-list">
+          </label>
+          <div class="filters z-filters" role="group" aria-label="Screen the host list by zone" aria-controls="z-list" data-z-filters></div>
+        </div>
+        <p class="z-count" data-z-count aria-live="polite"></p>
+        <ul class="z-list" id="z-list" data-z-list></ul>
+        <p class="z-none" data-z-none hidden>
+          No host matches that. <button class="z-reset" type="button" data-z-reset>Show all fourteen</button>
+        </p>
+      </div>
+
+      <p class="z-note">Dates as listed on the official competitions page. <a href="https://techfest.org/competitions" target="_blank" rel="noopener">Verify your city →</a>
+        <span class="z-aside">Zones below are this page&rsquo;s own reading of where each host sits on the map, not a Techfest category.</span></p>
     </div>
   </section>
 
@@ -1118,7 +1137,7 @@
   </div>
 </footer>
 
-<script src="js/main.js?v=22"></script>
-<script src="js/platform.js?v=22"></script>
+<script src="js/main.js?v=23"></script>
+<script src="js/platform.js?v=23"></script>
 </body>
 </html>

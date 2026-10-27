@@ -23,7 +23,8 @@ cannot register one, so the install prompt and the standalone window only appear
 index.html          markup + all copy
 css/styles.css      design tokens, liquid glass, layout, motion (Space Grotesk, #0A0A0C / #FFD700)
 js/main.js          category tabs, motion toggle, scroll reveal + section rail, mobile nav,
-                    marquee, pointer spotlight, shortlist and its export, ambience
+                    marquee and the searchable zonal board, pointer spotlight, shortlist and its
+                    export, ambience
 js/platform.js      the Fest OS modules: crew, live day, judging, engage, payouts
 manifest.webmanifest PWA manifest (standalone display, #0A0A0C theme, three icon sizes)
 assets/img          generated 2D artwork (webp), favicon.svg, the 1200x630 og-farside.jpg
@@ -144,6 +145,14 @@ resize back to desktop width; `aria-expanded`, the button's label and the `[hidd
 all follow. `index.html` requests the css/js with a `?v=` stamp — bump it if you edit a
 stylesheet or script and the browser keeps serving the old copy.
 
+The header has a second, narrower breakpoint at 1340px. With the words **Ambience** and **Motion
+off** shown, the row measured 12px wider than the 1240px column at a 1280px laptop — the single most
+common width there is — and the page scrolled sideways by that much. The words go to accessible-name
+only across that band and the nav and control gaps tighten, which is also what keeps a six-link nav
+from being squeezed into wrapping a link onto a second line. The words reappear above 1340px, where
+the row overhangs the column's right edge by ~120px; that overhang predates this pass and is a
+spacing trade-off rather than a break, but it is the reason the collapse exists at all.
+
 ### Ambience: drone + score
 
 The header **Ambience** button starts music, not just weather. Two layers are synthesised live
@@ -176,6 +185,22 @@ consent question.
 
 The Fest OS modules ask for a confirmation blip through a `tf:ping` document event. It is only ever
 heard while the ambience is already running, so no interaction can startle with sound.
+
+## Zonals: the ticker and the board
+
+`#zonals` carries the fourteen host campuses listed on the official competitions page. The
+drifting ticker is atmosphere — you cannot read a city you have to wait forty-six seconds for — so
+underneath it sits the same fourteen as a searchable board: one text field matched against city,
+institute and date, seven zone chips, and a counted line announced through `aria-live`.
+
+It reads the marquee's own `<li>` elements instead of repeating the list, so the fourteen hosts
+exist once in the markup. That makes boot order load-bearing: the board must be built before
+`startMarquee()` doubles the row for the seamless loop, and the reader dedupes by city in case that
+order ever changes. With motion off there is nothing to double and the board is the only version.
+
+The zone labels are this page's own reading of where each host sits geographically — Techfest's
+competitions page does not group them that way — which is said out loud in the `.z-aside` under the
+board rather than left for the visitor to assume.
 
 ## Shortlist
 

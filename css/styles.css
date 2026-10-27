@@ -303,6 +303,29 @@ html.motion-on .card-img:hover img{transform:scale(1.05)}
 .z-row span{font-size:.76rem;color:var(--haze-2)}
 .z-note{margin-top:22px;font-size:.8rem;color:var(--haze-2)}
 .z-note a{color:var(--gold);border-bottom:1px solid rgba(255,215,0,.35)}
+.z-aside{display:block;margin-top:6px;font-size:.74rem;color:var(--haze-2)}
+
+/* ---------- zonal board ----------
+   The searchable counterpart to the ticker above. Both list elements toggle
+   [hidden], and an explicit display on either would beat the UA's hidden rule,
+   so the two [hidden] overrides below are load-bearing rather than defensive. */
+.z-board{margin-top:clamp(26px,3.4vw,40px)}
+.z-tools{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,360px);gap:14px;align-items:end}
+.z-q{min-width:0}
+.z-filters{margin-bottom:0}
+.z-count{margin:14px 0 12px;font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--haze-2)}
+.z-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.z-cell{display:grid;gap:5px;align-content:start;padding:14px 16px;border:1px solid var(--line);border-radius:12px;transition:border-color .3s}
+.z-cell:hover{border-color:rgba(255,215,0,.45)}
+.z-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.z-top b{font-size:.98rem;letter-spacing:-.01em}
+.z-zone{flex:none;font-size:.56rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);opacity:.85}
+.z-host{font-size:.82rem;color:var(--paper)}
+.z-when{font-size:.72rem;color:var(--haze-2)}
+.z-none{display:flex;flex-wrap:wrap;align-items:center;gap:10px;font-size:.86rem;color:var(--haze)}
+.z-reset{padding:6px 13px;border:1px solid var(--edge);border-radius:999px;font-size:.72rem;font-weight:700;letter-spacing:.06em;color:var(--gold);transition:border-color .2s,color .2s,background .2s}
+.z-reset:hover{border-color:var(--gold);background:var(--gold-dim)}
+.z-list[hidden],.z-none[hidden]{display:none}
 html.motion-on .z-track[data-clone="1"] .z-row{display:flex;flex-wrap:nowrap;width:max-content;animation:slide 46s linear infinite}
 html.motion-on .z-track[data-clone="1"]:hover .z-row{animation-play-state:paused}
 @keyframes slide{from{transform:translateX(0)}to{transform:translateX(-50%)}}
@@ -396,12 +419,13 @@ html.motion-on .cta-card:hover .arrow{transform:translateX(5px)}
 .phase-rail{position:relative;isolation:isolate;overflow:hidden;background:var(--glass),var(--glass-fill);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border-color:var(--edge);box-shadow:var(--gloss),var(--shadow)}
 .plan{position:relative;isolation:isolate;overflow:hidden;background:var(--glass),rgba(17,15,5,.74);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border-color:rgba(255,215,0,.32);box-shadow:var(--gloss),var(--shadow)}
 .tab{background:var(--glass-deep),rgba(16,17,23,.62);border-color:var(--edge);box-shadow:var(--gloss)}
-.card,.cta-card,.about-card,.feat-visual,.tile,.z-row li,.glance>div{border-color:var(--edge)}
+.card,.cta-card,.about-card,.feat-visual,.tile,.z-row li,.z-cell,.glance>div{border-color:var(--edge)}
 .card{position:relative;isolation:isolate;overflow:hidden;background:var(--glass),rgba(19,20,27,.74);box-shadow:var(--gloss)}
 .cta-card{isolation:isolate;overflow:hidden;background:var(--glass),linear-gradient(150deg,var(--ink-3),rgba(10,10,12,.7));box-shadow:var(--gloss)}
 .about-card{position:relative;isolation:isolate;overflow:hidden;background:var(--glass),linear-gradient(140deg,var(--ink-3),var(--ink));box-shadow:var(--gloss),var(--shadow)}
 .feat-list li{background:var(--glass-deep),rgba(15,16,20,.88)}
 .z-row li{background:var(--glass-deep),linear-gradient(160deg,var(--ink-3),var(--ink-2))}
+.z-cell{background:var(--glass-deep),linear-gradient(160deg,var(--ink-3),var(--ink-2))}
 .glance>div{background:var(--glass-deep),rgba(10,10,12,.72)}
 .feat-visual{border-color:rgba(255,215,0,.3);box-shadow:var(--gloss)}
 .tile-d{box-shadow:var(--gloss)}
@@ -888,10 +912,21 @@ html.motion-on .pin.is-live::after{animation:blip 1.6s ease-in-out infinite}
   .about-body{border-left:0;padding-left:0;border-top:1px solid var(--line);padding-top:20px}
   .foot-grid{grid-template-columns:1fr 1fr 1fr}
 }
-@media (max-width:1240px){
-  /* keep the words as the accessible name; only hide them visually */
+@media (max-width:1340px){
+  /* keep the words as the accessible name; only hide them visually.
+     Measured: with the words shown, the header's Register button clears the
+     wrap's right edge somewhere north of 1340px and pushes a ~12px sideways
+     scroll at 1280 — the most common laptop width there is. */
   .motion-btn .motion-lbl,.sound-btn .sound-lbl{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
   .motion-btn,.sound-btn{padding:8px 10px}
+}
+/* The nav is visible from 1081px up but the wrap stops growing at 1240px, so
+   1081–1340 is the one band where six links plus the control cluster have to
+   share a fixed track. Tighten the gaps rather than clip a link. */
+@media (min-width:1081px) and (max-width:1340px){
+  .head-in{gap:18px}
+  .nav{gap:clamp(12px,1.4vw,18px)}
+  .head-act{gap:9px}
 }
 @media (max-width:1080px){
   .nav{display:none}
@@ -923,7 +958,7 @@ html.motion-on .pin.is-live::after{animation:blip 1.6s ease-in-out infinite}
   .ru-name{flex:1 1 100%}
   .ru input[type=range]{flex:1 1 100%;width:100%;max-width:none}
   .ru-p{margin-left:auto}
-  .hunt,.net-tools,.pay-tools{grid-template-columns:minmax(0,1fr)}
+  .hunt,.net-tools,.pay-tools,.z-tools{grid-template-columns:minmax(0,1fr)}
   /* a trail row is a stage name plus two numbers: drop to two tracks and let
      the day count sit under the stage rather than crushing the date */
   .pay-trail div{grid-template-columns:minmax(0,1fr) auto}

@@ -269,6 +269,133 @@
     track.removeAttribute('data-clone');
   }
 
+  /* ---------- zonal board ----------
+     The ticker above is atmosphere; this is the lookup. It reads the marquee's own
+     <li>s so the fourteen hosts exist once in the markup rather than twice, which
+     means it must run before startMarquee() doubles that row — the seen map is the
+     guard if the order ever changes. */
+  var zList = document.querySelector('[data-z-list]');
+  var zCount = document.querySelector('[data-z-count]');
+  var zNone = document.querySelector('[data-z-none]');
+  var zQ = document.querySelector('[data-z-q]');
+  var zFiltersEl = document.querySelector('[data-z-filters]');
+  var ZONES = ['All', 'North', 'South', 'East', 'West', 'Central', 'International'];
+  var zState = { zone: 'All', q: '' };
+  var hosts = [];
+
+  (function readHosts() {
+    var row = document.querySelector('.z-row');
+    if (!row) return;
+    var seen = {};
+    Array.prototype.forEach.call(row.children, function (li) {
+      var city = li.querySelector('b');
+      var detail = li.querySelector('span');
+      if (!city || !detail) return;
+      var name = city.textContent.trim();
+      if (seen[name]) return;
+      seen[name] = 1;
+      var bits = detail.textContent.split('·');
+      hosts.push({
+        city: name,
+        host: (bits[0] || '').trim(),
+        when: (bits[1] || '').trim(),
+        zone: li.dataset.zone || 'Other',
+        hay: (name + ' ' + detail.textContent).toLowerCase()
+      });
+    });
+  })();
+
+  function matchZ(h) {
+    if (zState.zone !== 'All' && h.zone !== zState.zone) return false;
+    return !zState.q || h.hay.indexOf(zState.q) > -1;
+  }
+
+  function zCell(h) {
+    var li = document.createElement('li');
+    li.className = 'z-cell';
+    var top = document.createElement('div');
+    top.className = 'z-top';
+    var b = document.createElement('b');
+    b.textContent = h.city;
+    var zone = document.createElement('span');
+    zone.className = 'z-zone';
+    zone.textContent = h.zone;
+    top.appendChild(b);
+    top.appendChild(zone);
+    var who = document.createElement('span');
+    who.className = 'z-host';
+    who.textContent = h.host;
+    var when = document.createElement('span');
+    when.className = 'z-when';
+    when.textContent = h.when;
+    li.appendChild(top);
+    li.appendChild(who);
+    li.appendChild(when);
+    return li;
+  }
+
+  function renderZ() {
+    if (!zList) return;
+    zList.textContent = '';
+    var rows = hosts.filter(matchZ);
+    var head = rows.length === hosts.length && zState.zone === 'All' && !zState.q
+      ? 'Showing all ' + hosts.length + ' host campuses.'
+      : 'Showing ' + rows.length + ' of ' + hosts.length
+        + (zState.zone === 'All' ? '' : ' \u00b7 ' + zState.zone)
+        + (zState.q ? ' \u00b7 \u201c' + zState.q + '\u201d' : '') + '.';
+    if (zCount) zCount.textContent = head;
+    rows.forEach(function (h) { zList.appendChild(zCell(h)); });
+    if (zNone) zNone.hidden = rows.length > 0;
+    zList.hidden = rows.length === 0;
+  }
+
+  function syncZFilters() {
+    if (!zFiltersEl) return;
+    zFiltersEl.querySelectorAll('.filt').forEach(function (x) {
+      x.setAttribute('aria-pressed', String(x.dataset.zone === zState.zone));
+    });
+  }
+
+  function buildZFilters() {
+    if (!zFiltersEl) return;
+    ZONES.forEach(function (z) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'filt';
+      btn.textContent = z;
+      btn.dataset.zone = z;
+      btn.setAttribute('aria-pressed', String(z === zState.zone));
+      btn.addEventListener('click', function () {
+        zState.zone = z;
+        syncZFilters();
+        renderZ();
+      });
+      zFiltersEl.appendChild(btn);
+    });
+  }
+
+  if (zList) {
+    buildZFilters();
+    renderZ();
+    if (zQ) {
+      zQ.addEventListener('input', function () {
+        zState.q = zQ.value.trim().toLowerCase();
+        renderZ();
+      });
+    }
+    var zReset = document.querySelector('[data-z-reset]');
+    if (zReset) {
+      zReset.addEventListener('click', function () {
+        zState.zone = 'All';
+        zState.q = '';
+        if (zQ) zQ.value = '';
+        syncZFilters();
+        renderZ();
+        if (zQ) zQ.focus();
+      });
+    }
+  }
+
   /* ---------- anchored scrolling with header offset ---------- */
   document.addEventListener('click', function (e) {
     var a = e.target.closest('a[href^="#"]');
