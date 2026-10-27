@@ -21,7 +21,7 @@ cannot register one, so the install prompt and the standalone window only appear
 
 ```
 index.html          markup + all copy
-css/styles.css      design tokens, liquid glass, layout, motion (Space Grotesk, #0A0A0C / #FFD700)
+css/styles.css      design tokens, liquid glass, layout, motion, print sheet (Space Grotesk, #0A0A0C / #FFD700)
 js/main.js          category tabs, motion toggle, scroll reveal + section rail, mobile nav,
                     marquee and the searchable zonal board, pointer spotlight, shortlist and its
                     export, ambience
@@ -215,12 +215,46 @@ category + title so the same words in two lanes stay distinct. Nothing leaves th
 is no account, and clearing it removes the key entirely. With storage unavailable (private mode,
 locked-down origins) the toggles still work for the visit and simply forget on reload.
 
-A list you cannot hand to anyone is a to-do rather than a plan, so the panel ends in two exits:
-**Copy as text** puts the picks on the clipboard grouped by lane, and **Download CSV** writes
-`techfest-plan.csv` from a Blob for a spreadsheet. Both read the same in-memory array and neither
-sends it anywhere. The `role="status"` line under the panel reports what happened, including the
+A list you cannot hand to anyone is a to-do rather than a plan, so the panel ends in three exits:
+**Copy as text** puts the picks on the clipboard grouped by lane, **Download CSV** writes
+`techfest-plan.csv` from a Blob for a spreadsheet, and **Print plan** puts them on paper (see
+[On paper](#on-paper)). All three read the same in-memory array and none of them sends it anywhere.
+The `role="status"` line under the panel reports what happened, including the
 refusal path: the asynchronous clipboard API falls back to a hidden textarea and `execCommand`, and
 if even that is blocked it says so instead of claiming a copy.
+
+## On paper
+
+The shortlist's third exit is a print stylesheet, and it has two paths. `js/main.js` fills the
+empty `.print-sheet` at the end of the body and puts `print-plan` on `<html>`, and the print media
+block then hides every other body child: with picks, Ctrl/Cmd+P or **Print plan** yields one clean
+sheet of them, grouped by lane with a count per group and a line saying the sheet is not a booking.
+With no picks the class is never set and the page prints as itself, because a sheet that announces
+"nothing" is a worse answer than whatever the visitor meant to print. `beforeprint` rebuilds the
+sheet, so the browser's own print menu takes the same path as the button.
+
+Flattening the page for paper needed one decision worth stating: this design is built from
+translucent dark fills under near-white text, and on paper that breaks twice — the fills print as
+grey smudges and the text disappears. Rather than restate the twenty-odd component backgrounds that
+carry a literal `rgba`, the print block flattens every surface with one universal rule and
+re-derives the colour tokens for paper, so components follow without being named.
+
+The rest is what a screen affordance is not worth ink over: the fixed layers, the section rail, the
+moon button, the header and every control that would ask the reader to click a sheet of paper are
+removed; `.pick` is restated at its own specificity (`.card .pick`) because the flat rule loses to
+it; scroll reveal is forced to opacity 1 so a page that was never scrolled does not print blank
+sections; `body`'s `overflow-x:hidden` becomes visible so nothing is clipped to the print viewport;
+and external links in the footer, the zonals note and the CTA rows print their own URL after the
+label, which is the only reason a printed link exists.
+
+Two sections stay on screen deliberately. The drifting zonal ticker is hidden where the searchable
+board prints the same fourteen hosts instead. And **Fest OS does not print at all**: it is sliders,
+chat inputs and code boxes over data that is labelled sample, and on paper that reads like a result
+rather than a mock-up.
+
+One expected oddity for an automated audit: the sheet opens with its own `<h1>`, so a heading count
+taken over the raw markup finds two. It is inside a `display:none` subtree on screen and the only
+heading on paper, where the page's own `<h1>` is hidden along with the rest of the body's children.
 
 ## Fest OS
 

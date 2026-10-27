@@ -1018,3 +1018,81 @@ html.motion-on .pin.is-live::after{animation:blip 1.6s ease-in-out infinite}
    no preference). A blanket `transition-duration:0!important` rule used to sit
    here as well — it also froze the functional UI (hamburger, menu panel, hover
    feedback), which made the controls look dead, so it is gone. */
+
+/* ============================================================
+   PRINT
+   Two paths. With picks on the shortlist the page steps aside and a plain sheet
+   of them prints; with none the page prints as itself, because a sheet that
+   announces "nothing" is a worse answer than whatever the visitor meant to print.
+   ============================================================ */
+.print-sheet{display:none}
+
+@media print{
+  @page{margin:14mm 15mm}
+
+  /* The page is built from translucent dark fills under near-white text. Paper
+     breaks that twice over: the fills come out as grey smudges and the text
+     vanishes. Rather than restate the ~25 component backgrounds that carry a
+     literal rgba, every surface is flattened and the colour tokens are
+     re-derived for paper — one rule each, and the components follow. */
+  :root{
+    --paper:#151515;--haze:#3d3d3d;--haze-2:#3d3d3d;
+    --gold:#6f5600;--gold-2:#6f5600;--gold-dim:transparent;
+    --line:#c6c6c6;--line-2:#dedede;--edge:#c6c6c6;--cool:#3a4a8c;--violet:#5a4180;
+    --shadow:none;--gloss:none;--sheen:none;--blur:none;
+  }
+  *,*::before,*::after{
+    background:transparent!important;box-shadow:none!important;text-shadow:none!important;
+    backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+    animation:none!important;transition:none!important;
+  }
+  /* overflow-x:hidden on the body would clip the print viewport, and scroll
+     reveal leaves anything below the fold at opacity 0 in a fresh print job */
+  html,body{overflow:visible}
+  body{background:#fff!important;color:#151515}
+  html.motion-on .reveal{opacity:1;transform:none}
+  .hero-bg,.feat-visual svg{transform:none}
+  body::after,.aurora,.stars,.img-cap{mix-blend-mode:normal}
+
+  /* chrome with no paper form: the header and its controls, the two fixed
+     overlays, the ticker whose content the board below repeats, and every
+     button that would ask the reader to click a sheet of paper */
+  .skip,.head,.mobile-nav,.spy,.phase-mark,.prog,.z-track,
+  .plan-list li button,.plan-act,.plan-status,.plan-clear,.z-tools,.z-reset{display:none}
+  /* stated at the same depth as the screen rule (.card .pick), which a flat .pick
+     here would lose to */
+  .card .pick{display:none}
+  /* the Fest OS modules are sliders, chat inputs and code boxes over data that
+     is labelled sample — on paper that reads like a result. It stays on screen. */
+  #fest-os{display:none}
+
+  a{color:#151515;text-decoration:underline;text-decoration-color:#9a9a9a}
+  /* a printed link that does not say where it goes is a decoration. Only the
+     places that carry a real destination spell theirs out. */
+  .foot a[href^="https://"]::after,.z-note a[href^="https://"]::after,.cta-row a[href^="https://"]::after{
+    content:" (" attr(href) ")";font-size:.78em;color:#555;word-break:break-all}
+
+  /* screens give these bands up to 130px of air, which on A4 is a page; the
+     element selector `section` would lose to the class rules, so name them */
+  .hero,.about,.discover,.featured,.zonals,.atmo,.cta{padding-block:16px 26px}
+  .wrap{max-width:none}
+  h1,h2,h3,h4,.sec-h{color:#151515;break-after:avoid}
+  .card,.z-cell,.feat-list li,.plan-list li,.about-card,.glance>div,.tile,.plan{break-inside:avoid}
+  .img-cap{position:static;padding:6px 0 0;color:#151515;font-size:.8rem}
+  .tile{min-height:0}
+
+  /* the sheet itself */
+  html.print-plan .print-sheet{display:block;color:#151515;font-size:11pt;line-height:1.5}
+  html.print-plan body>*:not(.print-sheet){display:none}
+  .ps-head h1{margin:0 0 5pt;font-size:19pt;letter-spacing:-.015em}
+  .ps-meta{margin:0 0 15pt;padding-bottom:7pt;border-bottom:1px solid #bbb;
+    font-size:8.5pt;letter-spacing:.12em;text-transform:uppercase;color:#555}
+  .ps-group{margin-bottom:13pt;break-inside:avoid}
+  .ps-group h2{display:flex;justify-content:space-between;gap:10pt;margin:0 0 5pt;
+    font-size:8.5pt;letter-spacing:.14em;text-transform:uppercase;color:#6f5600}
+  .ps-n{color:#555}
+  .ps-group ol{margin:0;padding-left:15pt}
+  .ps-group li{list-style:decimal;margin-bottom:2.5pt;font-size:11.5pt}
+  .ps-foot{margin-top:18pt;padding-top:7pt;border-top:1px solid #bbb;font-size:8.5pt;color:#555}
+  .ps-foot p{margin:0 0 4pt}
+}

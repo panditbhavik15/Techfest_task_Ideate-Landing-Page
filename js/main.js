@@ -770,6 +770,55 @@
     say('Saved techfest-plan.csv with ' + plan.length + ' rows.');
   }
 
+  /* ---------- paper ----------
+     The third exit is the one that ends up on a noticeboard. The sheet markup at
+     the end of the body stays empty until this fills it, and the print stylesheet
+     swaps to it — but only when there is a plan. Printing with nothing picked
+     leaves the page itself, because a sheet that says "nothing" is a worse answer
+     than the page the visitor meant to print. */
+  var planPrint = document.querySelector('[data-plan-print]');
+  var psCount = document.querySelector('[data-ps-count]');
+  var psDate = document.querySelector('[data-ps-date]');
+  var psBody = document.querySelector('[data-ps-body]');
+
+  function buildSheet() {
+    var on = plan.length > 0;
+    root.classList.toggle('print-plan', on);
+    if (!on || !psBody) return;
+    var g = planGroups();
+    if (psCount) psCount.textContent = plan.length + (plan.length === 1 ? ' item' : ' items') + ' \u00b7 ';
+    if (psDate) psDate.textContent = new Date().toLocaleDateString();
+    psBody.textContent = '';
+    g.order.forEach(function (kind) {
+      var sec = document.createElement('section');
+      sec.className = 'ps-group';
+      var h = document.createElement('h2');
+      h.textContent = kind;
+      var n = document.createElement('span');
+      n.className = 'ps-n';
+      n.textContent = String(g.map[kind].length);
+      h.appendChild(n);
+      var ol = document.createElement('ol');
+      g.map[kind].forEach(function (t) {
+        var li = document.createElement('li');
+        li.textContent = t;
+        ol.appendChild(li);
+      });
+      sec.appendChild(h);
+      sec.appendChild(ol);
+      psBody.appendChild(sec);
+    });
+  }
+
+  /* The button lives in .plan-foot, which .is-empty hides, so an empty shortlist
+     has no way to reach this. */
+  function printPlan() {
+    buildSheet();
+    window.print();
+  }
+
+  window.addEventListener('beforeprint', buildSheet);
+
   if (planBox) {
     document.querySelectorAll('.cards .card').forEach(function (card) {
       var h = card.querySelector('h4');
@@ -799,6 +848,7 @@
     }
     if (planCopy) planCopy.addEventListener('click', copyPlan);
     if (planCsv) planCsv.addEventListener('click', downloadPlan);
+    if (planPrint) planPrint.addEventListener('click', printPlan);
     renderPlan();
   }
 

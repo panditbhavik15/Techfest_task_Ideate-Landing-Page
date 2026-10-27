@@ -25,7 +25,7 @@
 <link rel="preload" href="assets/img/hero-farside.webp" as="image" fetchpriority="high">
 <link rel="preload" href="assets/fonts/space-grotesk-700.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/fonts/space-grotesk-400.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="css/styles.css?v=23">
+<link rel="stylesheet" href="css/styles.css?v=27">
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"Event","name":"Techfest, IIT Bombay","description":"Asia's largest science and technology festival, run entirely by students on the IIT Bombay campus: competitions, workshops, lectures, exhibitions and entertainment.","url":"https://techfest.org/","eventAttendanceMode":"https://schema.org/OfflineEventAttendanceMode","eventStatus":"https://schema.org/EventScheduled","image":"assets/img/og-farside.jpg","organizer":{"@type":"Organization","name":"Techfest, IIT Bombay","url":"https://techfest.org/"},"location":{"@type":"Place","name":"Indian Institute of Technology Bombay","address":{"@type":"PostalAddress","addressLocality":"Mumbai","addressRegion":"Maharashtra","addressCountry":"IN"}}}
 </script>
@@ -213,7 +213,7 @@
         <h2 class="sec-h">Pick your lane</h2>
         <p class="sec-sub">Every lane has its own entry point on the official site.</p>
         <p class="plan-hint">Tap <b>Add to plan</b> on anything worth doing — picks stay on this
-          device until you copy or download them. <a class="txt-link" href="#my-plan">See your shortlist</a></p>
+          device until you copy, print or download them. <a class="txt-link" href="#my-plan">See your shortlist</a></p>
       </header>
 
       <div class="disc-shell">
@@ -1027,6 +1027,7 @@
           <div class="plan-act">
             <button class="btn btn-sm btn-ghost" type="button" data-plan-copy>Copy as text</button>
             <button class="btn btn-sm btn-ghost" type="button" data-plan-csv>Download CSV</button>
+            <button class="btn btn-sm btn-ghost" type="button" data-plan-print>Print plan</button>
           </div>
           <button class="plan-clear" type="button" data-plan-clear>Clear all</button>
           <a class="txt-link" href="https://techfest.org/" target="_blank" rel="noopener">Register on techfest.org &rarr;</a>
@@ -1137,7 +1138,23 @@
   </div>
 </footer>
 
-<script src="js/main.js?v=23"></script>
-<script src="js/platform.js?v=23"></script>
+<!-- Paper. Empty until something is on the shortlist, and only ever shown by the
+     print stylesheet: Ctrl/Cmd+P with picks yields this sheet instead of forty
+     glass panels, and with none it yields the page itself. -->
+<div class="print-sheet" data-print-sheet>
+  <div class="ps-head">
+    <h1>Techfest, IIT Bombay &mdash; my plan</h1>
+    <p class="ps-meta"><span data-ps-count></span><span data-ps-date></span></p>
+  </div>
+  <div data-ps-body></div>
+  <div class="ps-foot">
+    <p>Assembled on this device from the shortlist panel. Not a booking, a ticket or a
+      registration &mdash; entry, times and venues are published on the official site.</p>
+    <p>techfest.org/competitions &middot; techfest.org/workshops &middot; techfest.org/ignite</p>
+  </div>
+</div>
+
+<script src="js/main.js?v=27"></script>
+<script src="js/platform.js?v=27"></script>
 </body>
 </html>
