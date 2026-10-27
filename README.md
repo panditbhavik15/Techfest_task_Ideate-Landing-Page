@@ -153,7 +153,7 @@ from being squeezed into wrapping a link onto a second line. The words reappear 
 the row overhangs the column's right edge by ~120px; that overhang predates this pass and is a
 spacing trade-off rather than a break, but it is the reason the collapse exists at all.
 
-### Ambience: drone + score
+### Ambience: drone  +  score
 
 The header **Ambience** button starts music, not just weather. Two layers are synthesised live
 with the Web Audio API the moment you click it — no audio file, no autoplay:
@@ -257,7 +257,7 @@ code runner.
   unkind: an unknown reference gets "nothing matches" and no hint about whether the number is real,
   because that confirmation is the entire attack.
 
-Three conventions hold the section together:
+Three conventions hold the section together :
 
 - every dynamic node comes from a `node(tag, class, text)` helper and `textContent` — `innerHTML`
   appears nowhere in `js/platform.js`, so a value typed into any field cannot become markup;
