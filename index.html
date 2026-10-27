@@ -6,8 +6,29 @@
 <title>Techfest 2026 · IIT Bombay — An Aetherial Renaissance</title>
 <meta name="description" content="Techfest, IIT Bombay — the 30th edition of Asia's largest science and technology festival. Competitions, workshops, lectures, exhibitions and entertainment on the IIT Bombay campus.">
 <meta name="theme-color" content="#0A0A0C">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Techfest, IIT Bombay">
+<meta property="og:title" content="Techfest 2026 · IIT Bombay — An Aetherial Renaissance">
+<meta property="og:description" content="The 30th edition of Asia's largest science and technology festival: competitions, workshops, lectures, exhibitions and entertainment on the IIT Bombay campus, plus the Fest OS that runs the day.">
+<meta property="og:image" content="assets/img/og-farside.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="A gold crescent moon rising over silhouetted festival domes, marquees and a rocket gantry, with orbit lines crossing a near-black sky">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Techfest 2026 · IIT Bombay — An Aetherial Renaissance">
+<meta name="twitter:description" content="The 30th edition of Asia's largest science and technology festival, on the IIT Bombay campus.">
+<meta name="twitter:image" content="assets/img/og-farside.jpg">
+<meta name="twitter:image:alt" content="A gold crescent moon rising over silhouetted festival domes, marquees and a rocket gantry">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
 <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="css/styles.css?v=21">
+<link rel="preload" href="assets/img/hero-farside.webp" as="image" fetchpriority="high">
+<link rel="preload" href="assets/fonts/space-grotesk-700.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/space-grotesk-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="css/styles.css?v=22">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Event","name":"Techfest, IIT Bombay","description":"Asia's largest science and technology festival, run entirely by students on the IIT Bombay campus: competitions, workshops, lectures, exhibitions and entertainment.","url":"https://techfest.org/","eventAttendanceMode":"https://schema.org/OfflineEventAttendanceMode","eventStatus":"https://schema.org/EventScheduled","image":"assets/img/og-farside.jpg","organizer":{"@type":"Organization","name":"Techfest, IIT Bombay","url":"https://techfest.org/"},"location":{"@type":"Place","name":"Indian Institute of Technology Bombay","address":{"@type":"PostalAddress","addressLocality":"Mumbai","addressRegion":"Maharashtra","addressCountry":"IN"}}}
+</script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -191,8 +212,8 @@
         <p class="eyebrow"><span class="rule" aria-hidden="true"></span> Five ways in</p>
         <h2 class="sec-h">Pick your lane</h2>
         <p class="sec-sub">Every lane has its own entry point on the official site.</p>
-        <p class="plan-hint">Tap <b>Add to plan</b> on anything worth doing — picks are kept on this
-          device. <a class="txt-link" href="#my-plan">See your shortlist</a></p>
+        <p class="plan-hint">Tap <b>Add to plan</b> on anything worth doing — picks stay on this
+          device until you copy or download them. <a class="txt-link" href="#my-plan">See your shortlist</a></p>
       </header>
 
       <div class="disc-shell">
@@ -984,9 +1005,14 @@
         <ul class="plan-list" data-plan-list></ul>
         <div class="plan-foot">
           <p class="plan-count" data-plan-count aria-live="polite">0 saved</p>
+          <div class="plan-act">
+            <button class="btn btn-sm btn-ghost" type="button" data-plan-copy>Copy as text</button>
+            <button class="btn btn-sm btn-ghost" type="button" data-plan-csv>Download CSV</button>
+          </div>
           <button class="plan-clear" type="button" data-plan-clear>Clear all</button>
           <a class="txt-link" href="https://techfest.org/" target="_blank" rel="noopener">Register on techfest.org &rarr;</a>
         </div>
+        <p class="plan-status" data-plan-status role="status"></p>
       </div>
     </div>
     <div class="wrap cta-grid">
@@ -1092,7 +1118,7 @@
   </div>
 </footer>
 
-<script src="js/main.js?v=21"></script>
-<script src="js/platform.js?v=21"></script>
+<script src="js/main.js?v=22"></script>
+<script src="js/platform.js?v=22"></script>
 </body>
 </html>

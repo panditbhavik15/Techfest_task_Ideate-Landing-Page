@@ -13,17 +13,21 @@ python -m http.server 5173 --bind 127.0.0.1
 # then open http://127.0.0.1:5173/
 ```
 
-Opening `index.html` directly also works; a server keeps the self-hosted fonts and
-`fetchpriority` hints behaving the same as production.
+Opening `index.html` directly also works; a server keeps the self-hosted fonts and `fetchpriority`
+hints behaving the same as production, and it is required for the manifest — `file://` origins
+cannot register one, so the install prompt and the standalone window only appear over HTTP.
 
 ## Layout
 
 ```
 index.html          markup + all copy
 css/styles.css      design tokens, liquid glass, layout, motion (Space Grotesk, #0A0A0C / #FFD700)
-js/main.js          category tabs, motion toggle, scroll reveal, mobile nav, marquee, shortlist, ambience
+js/main.js          category tabs, motion toggle, scroll reveal + section rail, mobile nav,
+                    marquee, pointer spotlight, shortlist and its export, ambience
 js/platform.js      the Fest OS modules: crew, live day, judging, engage, payouts
-assets/img          generated 2D artwork (webp) + favicon.svg
+manifest.webmanifest PWA manifest (standalone display, #0A0A0C theme, three icon sizes)
+assets/img          generated 2D artwork (webp), favicon.svg, the 1200x630 og-farside.jpg
+                    share card and the icon-192 / icon-512 / apple-touch-icon PNGs
 assets/fonts        self-hosted Space Grotesk 400/500/700 latin woff2
 ```
 
@@ -84,6 +88,24 @@ heads to 3.25rem, and `text-wrap:balance`/`pretty` keep short headings from orph
 accent word in the hero is gradient-clipped, inside `@supports (background-clip:text)` so an
 unsupported browser keeps the flat gold rule above it rather than an invisible word — and the glow
 is dropped in that block, since a `text-shadow` under transparent text paints as a solid blob.
+
+## Shareable
+
+The head carries Open Graph and Twitter card tags, a `manifest.webmanifest` link, an
+`apple-touch-icon`, and `preload` hints for the hero artwork and the two heaviest font weights —
+`crossorigin` on the font hints is not optional, since without it the preloaded response fails the
+CORS check and the file is fetched a second time. The preview card is `assets/img/og-farside.jpg`,
+a 1200x630 render in the same Farside language as the artwork: gold crescent, silhouetted domes and
+rocket gantry, no lettering in the image because the title arrives through `og:title`.
+
+The JSON-LD `Event` deliberately has no `startDate` or `endDate`. Those are the two fields search
+engines want most and the two this page refuses to invent — a guess in structured data is worse than
+an omission, because crawlers repeat it as fact. Add them here and to the hero's `.tbc` span when
+the real dates are known.
+
+`og:image` and the manifest icon paths are relative, which is right for the local server and for a
+deploy at a domain root; crawlers want absolute URLs, so replace the two image values with the full
+origin when publishing.
 
 ## Motion
 
@@ -167,6 +189,13 @@ The list is stored in `localStorage` under `tf-plan` as `{slug, title, kind}` ob
 category + title so the same words in two lanes stay distinct. Nothing leaves the browser, there
 is no account, and clearing it removes the key entirely. With storage unavailable (private mode,
 locked-down origins) the toggles still work for the visit and simply forget on reload.
+
+A list you cannot hand to anyone is a to-do rather than a plan, so the panel ends in two exits:
+**Copy as text** puts the picks on the clipboard grouped by lane, and **Download CSV** writes
+`techfest-plan.csv` from a Blob for a spreadsheet. Both read the same in-memory array and neither
+sends it anywhere. The `role="status"` line under the panel reports what happened, including the
+refusal path: the asynchronous clipboard API falls back to a hidden textarea and `execCommand`, and
+if even that is blocked it says so instead of claiming a copy.
 
 ## Fest OS
 

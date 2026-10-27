@@ -348,6 +348,9 @@ html.motion-on .tile:hover img{transform:scale(1.06)}
 .plan-count{font-size:.68rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--haze-2)}
 .plan-clear{font-size:.68rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--haze);border-bottom:1px solid var(--line);padding-bottom:2px;transition:color .25s,border-color .25s}
 .plan-clear:hover{color:var(--gold);border-color:var(--gold)}
+.plan-act{display:flex;flex-wrap:wrap;gap:8px;margin-left:auto}
+.plan-status{margin-top:-4px;font-size:.78rem;color:var(--gold)}
+.plan-status:empty{display:none}
 .plan.is-empty .plan-list,.plan.is-empty .plan-foot{display:none}
 .cta-grid{position:relative;display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.35fr);gap:clamp(28px,4vw,60px);align-items:start}
 .cta-lead .sec-h{font-size:clamp(1.9rem,3.8vw,3rem);margin-top:16px}

@@ -569,6 +569,80 @@
     storePlan(); syncPicks(); renderPlan();
   }
 
+  /* ---------- taking the plan off the device ----------
+     Without this the shortlist dies in localStorage on one browser, which defeats
+     the only reason to build it: showing a friend, or a form, what you intend to
+     attend. Text for a chat, CSV for a sheet. */
+  var planCopy = document.querySelector('[data-plan-copy]');
+  var planCsv = document.querySelector('[data-plan-csv]');
+  var planStatus = document.querySelector('[data-plan-status]');
+
+  function say(msg) {
+    if (!planStatus) return;
+    planStatus.textContent = '';
+    window.setTimeout(function () { planStatus.textContent = msg; }, 40);
+  }
+  function planGroups() {
+    var order = [], map = {};
+    plan.forEach(function (item) {
+      if (!map[item.k]) { map[item.k] = []; order.push(item.k); }
+      map[item.k].push(item.t);
+    });
+    return { order: order, map: map };
+  }
+  function planText() {
+    var g = planGroups();
+    var lines = ['Techfest, IIT Bombay — my plan',
+      plan.length + (plan.length === 1 ? ' item' : ' items'), ''];
+    g.order.forEach(function (kind) {
+      lines.push(kind.toUpperCase());
+      g.map[kind].forEach(function (t) { lines.push('  \u2022 ' + t); });
+      lines.push('');
+    });
+    lines.push('Times and venues are on techfest.org.');
+    return lines.join('\n');
+  }
+  function csvCell(v) {
+    return '"' + String(v).replace(/"/g, '""') + '"';
+  }
+  function legacyCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.className = 'sr-only';
+    document.body.appendChild(ta);
+    var ok = false;
+    try { ta.select(); ok = document.execCommand('copy'); } catch (e) { ok = false; }
+    ta.remove();
+    return ok;
+  }
+  function copyPlan() {
+    function done(ok) {
+      say(ok ? 'Copied ' + plan.length + (plan.length === 1 ? ' item' : ' items') + ' to the clipboard.'
+        : 'The browser refused the clipboard. Select the list above and copy it by hand.');
+    }
+    var text = planText();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { done(true); }, function () { done(legacyCopy(text)); });
+    } else {
+      done(legacyCopy(text));
+    }
+  }
+  function downloadPlan() {
+    var rows = ['category,title'];
+    plan.forEach(function (i) { rows.push(csvCell(i.k) + ',' + csvCell(i.t)); });
+    var blob = new Blob([rows.join('\r\n') + '\r\n'], { type: 'text/csv;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'techfest-plan.csv';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+    say('Saved techfest-plan.csv with ' + plan.length + ' rows.');
+  }
+
   if (planBox) {
     document.querySelectorAll('.cards .card').forEach(function (card) {
       var h = card.querySelector('h4');
@@ -593,8 +667,11 @@
       planClear.addEventListener('click', function () {
         plan = [];
         storePlan(); syncPicks(); renderPlan();
+        say('Shortlist cleared.');
       });
     }
+    if (planCopy) planCopy.addEventListener('click', copyPlan);
+    if (planCsv) planCsv.addEventListener('click', downloadPlan);
     renderPlan();
   }
 
