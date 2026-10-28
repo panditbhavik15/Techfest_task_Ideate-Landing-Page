@@ -19,9 +19,8 @@
       motionBtn.setAttribute('aria-pressed', String(on));
       motionBtn.querySelector('.motion-lbl').textContent = on ? 'Motion on' : 'Motion off';
     }
-    if (on) { startMarquee(); revealAll(); onScroll(); }
+    if (on) { revealAll(); onScroll(); }
     else {
-      stopMarquee();
       revealAll();
       document.querySelectorAll('[data-par]').forEach(function (el) { el.style.removeProperty('--py'); });
     }
@@ -254,26 +253,9 @@
     checkReveal();
   }
 
-  /* ---------- zonal marquee ---------- */
-  var track = document.querySelector('[data-marquee]');
-  function startMarquee() {
-    if (!track || !motionOn || track.dataset.clone === '1') return;
-    var row = track.querySelector('.z-row');
-    track._orig = row.innerHTML;
-    row.innerHTML += row.innerHTML;
-    track.dataset.clone = '1';
-  }
-  function stopMarquee() {
-    if (!track || track.dataset.clone !== '1') return;
-    track.querySelector('.z-row').innerHTML = track._orig;
-    track.removeAttribute('data-clone');
-  }
-
   /* ---------- zonal board ----------
-     The ticker above is atmosphere; this is the lookup. It reads the marquee's own
-     <li>s so the fourteen hosts exist once in the markup rather than twice, which
-     means it must run before startMarquee() doubles that row — the seen map is the
-     guard if the order ever changes. */
+     The fourteen hosts are plain markup in the list below; this only screens them,
+     so the cities stay readable with JavaScript off and on paper. */
   var zList = document.querySelector('[data-z-list]');
   var zCount = document.querySelector('[data-z-count]');
   var zNone = document.querySelector('[data-z-none]');
@@ -284,23 +266,16 @@
   var hosts = [];
 
   (function readHosts() {
-    var row = document.querySelector('.z-row');
-    if (!row) return;
-    var seen = {};
-    Array.prototype.forEach.call(row.children, function (li) {
+    if (!zList) return;
+    Array.prototype.forEach.call(zList.children, function (li) {
       var city = li.querySelector('b');
-      var detail = li.querySelector('span');
-      if (!city || !detail) return;
-      var name = city.textContent.trim();
-      if (seen[name]) return;
-      seen[name] = 1;
-      var bits = detail.textContent.split('·');
+      var who = li.querySelector('.z-host');
+      var when = li.querySelector('.z-when');
+      if (!city || !who || !when) return;
       hosts.push({
-        city: name,
-        host: (bits[0] || '').trim(),
-        when: (bits[1] || '').trim(),
+        el: li,
         zone: li.dataset.zone || 'Other',
-        hay: (name + ' ' + detail.textContent).toLowerCase()
+        hay: (city.textContent + ' ' + who.textContent + ' ' + when.textContent).toLowerCase()
       });
     });
   })();
@@ -310,43 +285,22 @@
     return !zState.q || h.hay.indexOf(zState.q) > -1;
   }
 
-  function zCell(h) {
-    var li = document.createElement('li');
-    li.className = 'z-cell';
-    var top = document.createElement('div');
-    top.className = 'z-top';
-    var b = document.createElement('b');
-    b.textContent = h.city;
-    var zone = document.createElement('span');
-    zone.className = 'z-zone';
-    zone.textContent = h.zone;
-    top.appendChild(b);
-    top.appendChild(zone);
-    var who = document.createElement('span');
-    who.className = 'z-host';
-    who.textContent = h.host;
-    var when = document.createElement('span');
-    when.className = 'z-when';
-    when.textContent = h.when;
-    li.appendChild(top);
-    li.appendChild(who);
-    li.appendChild(when);
-    return li;
-  }
-
   function renderZ() {
     if (!zList) return;
-    zList.textContent = '';
-    var rows = hosts.filter(matchZ);
-    var head = rows.length === hosts.length && zState.zone === 'All' && !zState.q
+    var shown = 0;
+    hosts.forEach(function (h) {
+      var on = matchZ(h);
+      h.el.hidden = !on;
+      if (on) shown++;
+    });
+    var head = shown === hosts.length && zState.zone === 'All' && !zState.q
       ? 'Showing all ' + hosts.length + ' host campuses.'
-      : 'Showing ' + rows.length + ' of ' + hosts.length
+      : 'Showing ' + shown + ' of ' + hosts.length
         + (zState.zone === 'All' ? '' : ' \u00b7 ' + zState.zone)
         + (zState.q ? ' \u00b7 \u201c' + zState.q + '\u201d' : '') + '.';
     if (zCount) zCount.textContent = head;
-    rows.forEach(function (h) { zList.appendChild(zCell(h)); });
-    if (zNone) zNone.hidden = rows.length > 0;
-    zList.hidden = rows.length === 0;
+    if (zNone) zNone.hidden = shown > 0;
+    zList.hidden = shown === 0;
   }
 
   function syncZFilters() {

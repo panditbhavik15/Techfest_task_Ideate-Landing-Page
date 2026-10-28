@@ -23,7 +23,7 @@ cannot register one, so the install prompt and the standalone window only appear
 index.html          markup + all copy
 css/styles.css      design tokens, liquid glass, layout, motion, print sheet (Space Grotesk, #0A0A0C / #FFD700)
 js/main.js          category tabs, motion toggle, scroll reveal + section rail, mobile nav,
-                    marquee and the searchable zonal board, pointer spotlight, shortlist and its
+                    the searchable zonal board, pointer spotlight, shortlist and its
                     export, ambience
 js/platform.js      the Fest OS modules: crew, live day, judging, engage, payouts
 manifest.webmanifest PWA manifest (standalone display, #0A0A0C theme, three icon sizes)
@@ -186,17 +186,21 @@ consent question.
 The Fest OS modules ask for a confirmation blip through a `tf:ping` document event. It is only ever
 heard while the ambience is already running, so no interaction can startle with sound.
 
-## Zonals: the ticker and the board
+## Zonals: one board, fourteen hosts
 
-`#zonals` carries the fourteen host campuses listed on the official competitions page. The
-drifting ticker is atmosphere — you cannot read a city you have to wait forty-six seconds for — so
-underneath it sits the same fourteen as a searchable board: one text field matched against city,
-institute and date, seven zone chips, and a counted line announced through `aria-live`.
+`#zonals` carries the fourteen host campuses listed on the official competitions page as a single
+searchable board: one text field matched against city, institute and date, seven zone chips, and a
+counted line announced through `aria-live`.
 
-It reads the marquee's own `<li>` elements instead of repeating the list, so the fourteen hosts
-exist once in the markup. That makes boot order load-bearing: the board must be built before
-`startMarquee()` doubles the row for the seamless loop, and the reader dedupes by city in case that
-order ever changes. With motion off there is nothing to double and the board is the only version.
+The fourteen are plain `<li class="z-cell">` markup and the script only ever sets `hidden` on them,
+so the list is readable with JavaScript off and on paper, and no city exists twice. `.z-cell` is
+`display:grid`, which would beat the browser's own `[hidden]` rule, so `.z-cell[hidden]` is
+restated in the sheet next to the two other `[hidden]` overrides that section needs.
+
+There used to be a second copy of this list: a ticker that drifted the same fourteen past the
+header on a forty-six second loop. It was atmosphere you could not use, it doubled its own row in
+`innerHTML` for the seamless loop, and the board read its data out of it, which made boot order
+load-bearing for no benefit. Both it and the marquee engine are gone.
 
 The zone labels are this page's own reading of where each host sits geographically — Techfest's
 competitions page does not group them that way — which is said out loud in the `.z-aside` under the
@@ -247,10 +251,10 @@ sections; `body`'s `overflow-x:hidden` becomes visible so nothing is clipped to 
 and external links in the footer, the zonals note and the CTA rows print their own URL after the
 label, which is the only reason a printed link exists.
 
-Two sections stay on screen deliberately. The drifting zonal ticker is hidden where the searchable
-board prints the same fourteen hosts instead. And **Fest OS does not print at all**: it is sliders,
-chat inputs and code boxes over data that is labelled sample, and on paper that reads like a result
-rather than a mock-up.
+One section stays off paper deliberately: **Fest OS does not print at all**. It is sliders,
+chat inputs and a rubric over data that is labelled sample, and on paper that reads like a result
+rather than a mock-up. The zonal board does print, minus its search row, and a cell the visitor
+screened out stays screened out.
 
 One expected oddity for an automated audit: the sheet opens with its own `<h1>`, so a heading count
 taken over the raw markup finds two. It is inside a `display:none` subtree on screen and the only

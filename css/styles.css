@@ -295,20 +295,15 @@ html.motion-on .card-img:hover img{transform:scale(1.05)}
 
 /* ---------- zonals ---------- */
 .zonals{padding-block:clamp(64px,9vw,110px);overflow:hidden}
-.z-track{overflow:hidden;margin-top:8px;-webkit-mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent);mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent)}
-.z-row{display:flex;flex-wrap:wrap;gap:12px}
-.z-row li{flex:none;min-width:190px;padding:14px 18px;border:1px solid var(--line);border-radius:12px;background:linear-gradient(160deg,var(--ink-3),var(--ink-2));display:grid;gap:4px;transition:border-color .3s}
-.z-row li:hover{border-color:rgba(255,215,0,.45)}
-.z-row b{font-size:.98rem;letter-spacing:-.01em}
-.z-row span{font-size:.76rem;color:var(--haze-2)}
 .z-note{margin-top:22px;font-size:.8rem;color:var(--haze-2)}
 .z-note a{color:var(--gold);border-bottom:1px solid rgba(255,215,0,.35)}
 .z-aside{display:block;margin-top:6px;font-size:.74rem;color:var(--haze-2)}
 
 /* ---------- zonal board ----------
-   The searchable counterpart to the ticker above. Both list elements toggle
-   [hidden], and an explicit display on either would beat the UA's hidden rule,
-   so the two [hidden] overrides below are load-bearing rather than defensive. */
+   The fourteen hosts live in the markup as .z-cell rows and this screens them.
+   Every list element toggles [hidden], and an explicit display on any of them
+   would beat the UA's hidden rule, so the [hidden] overrides below are
+   load-bearing rather than defensive. */
 .z-board{margin-top:clamp(26px,3.4vw,40px)}
 .z-tools{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,360px);gap:14px;align-items:end}
 .z-q{min-width:0}
@@ -325,10 +320,7 @@ html.motion-on .card-img:hover img{transform:scale(1.05)}
 .z-none{display:flex;flex-wrap:wrap;align-items:center;gap:10px;font-size:.86rem;color:var(--haze)}
 .z-reset{padding:6px 13px;border:1px solid var(--edge);border-radius:999px;font-size:.72rem;font-weight:700;letter-spacing:.06em;color:var(--gold);transition:border-color .2s,color .2s,background .2s}
 .z-reset:hover{border-color:var(--gold);background:var(--gold-dim)}
-.z-list[hidden],.z-none[hidden]{display:none}
-html.motion-on .z-track[data-clone="1"] .z-row{display:flex;flex-wrap:nowrap;width:max-content;animation:slide 46s linear infinite}
-html.motion-on .z-track[data-clone="1"]:hover .z-row{animation-play-state:paused}
-@keyframes slide{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.z-list[hidden],.z-none[hidden],.z-cell[hidden]{display:none}
 
 /* ---------- atmosphere ---------- */
 .atmo{padding-block:clamp(70px,10vw,130px);border-block:1px solid var(--line-2);background:
@@ -419,12 +411,11 @@ html.motion-on .cta-card:hover .arrow{transform:translateX(5px)}
 .phase-rail{position:relative;isolation:isolate;overflow:hidden;background:var(--glass),var(--glass-fill);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border-color:var(--edge);box-shadow:var(--gloss),var(--shadow)}
 .plan{position:relative;isolation:isolate;overflow:hidden;background:var(--glass),rgba(17,15,5,.74);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border-color:rgba(255,215,0,.32);box-shadow:var(--gloss),var(--shadow)}
 .tab{background:var(--glass-deep),rgba(16,17,23,.62);border-color:var(--edge);box-shadow:var(--gloss)}
-.card,.cta-card,.about-card,.feat-visual,.tile,.z-row li,.z-cell,.glance>div{border-color:var(--edge)}
+.card,.cta-card,.about-card,.feat-visual,.tile,.z-cell,.glance>div{border-color:var(--edge)}
 .card{position:relative;isolation:isolate;overflow:hidden;background:var(--glass),rgba(19,20,27,.74);box-shadow:var(--gloss)}
 .cta-card{isolation:isolate;overflow:hidden;background:var(--glass),linear-gradient(150deg,var(--ink-3),rgba(10,10,12,.7));box-shadow:var(--gloss)}
 .about-card{position:relative;isolation:isolate;overflow:hidden;background:var(--glass),linear-gradient(140deg,var(--ink-3),var(--ink));box-shadow:var(--gloss),var(--shadow)}
 .feat-list li{background:var(--glass-deep),rgba(15,16,20,.88)}
-.z-row li{background:var(--glass-deep),linear-gradient(160deg,var(--ink-3),var(--ink-2))}
 .z-cell{background:var(--glass-deep),linear-gradient(160deg,var(--ink-3),var(--ink-2))}
 .glance>div{background:var(--glass-deep),rgba(10,10,12,.72)}
 .feat-visual{border-color:rgba(255,215,0,.3);box-shadow:var(--gloss)}
@@ -1031,9 +1022,9 @@ html.motion-on .pin.is-live::after{animation:blip 1.6s ease-in-out infinite}
   body::after,.aurora,.stars,.img-cap{mix-blend-mode:normal}
 
   /* chrome with no paper form: the header and its controls, the two fixed
-     overlays, the ticker whose content the board below repeats, and every
-     button that would ask the reader to click a sheet of paper */
-  .skip,.head,.mobile-nav,.spy,.phase-mark,.prog,.z-track,
+     overlays, the board's search row, and every button that would ask the
+     reader to click a sheet of paper */
+  .skip,.head,.mobile-nav,.spy,.phase-mark,.prog,
   .plan-list li button,.plan-act,.plan-status,.plan-clear,.z-tools,.z-reset{display:none}
   /* stated at the same depth as the screen rule (.card .pick), which a flat .pick
      here would lose to */
