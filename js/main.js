@@ -647,7 +647,7 @@
     if (add && i < 0) plan.push({ s: slug, t: title, k: kind });
     else if (!add && i > -1) plan.splice(i, 1);
     else return;
-    storePlan(); syncPicks(); renderPlan();
+    storePlan(); syncPicks(); renderPlan(); syncMatchRows();
   }
 
   /* ---------- taking the plan off the device ----------
@@ -796,7 +796,7 @@
     if (planClear) {
       planClear.addEventListener('click', function () {
         plan = [];
-        storePlan(); syncPicks(); renderPlan();
+        storePlan(); syncPicks(); renderPlan(); syncMatchRows();
         say('Shortlist cleared.');
       });
     }
@@ -805,6 +805,772 @@
     if (planPrint) planPrint.addEventListener('click', printPlan);
     renderPlan();
   }
+
+  /* ---------- shared text helpers ----------
+     The three features below are the only things on this page that need
+     JavaScript to have anything to show, so the html element carries the proof
+     and the stylesheet hides those two panels until it is set.
+     norm() is the only thing the search and the matcher score against: it folds
+     case and turns every punctuation run into a space, so 'AI-generated' and
+     'Early-bird' become searchable words without a word list having to know the
+     difference. Labels are shown from the original text, never from norm(). */
+  root.classList.add('js-on');
+
+  function norm(s) {
+    return String(s == null ? '' : s).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  }
+  /* a headline with a <br> reads as two words glued together through textContent,
+     so the break is collected as a space instead */
+  function txt(el) {
+    if (!el) return '';
+    if (el.nodeType === 3) return el.nodeValue || '';
+    if (el.nodeName === 'BR') return ' ';
+    var out = '';
+    for (var i = 0; i < el.childNodes.length; i++) out += txt(el.childNodes[i]);
+    return out;
+  }
+  function short(s, words) {
+    var parts = String(s || '').replace(/\s+/g, ' ').trim().split(' ');
+    if (parts.length <= words) return parts.join(' ');
+    return parts.slice(0, words).join(' ') + '\u2026';
+  }
+  /* this page has eleven text fields of its own — search, chat, clue, judge
+     marks, crew forms — and a global shortcut must not eat a keystroke from any
+     of them */
+  function isTyping(t) {
+    if (!t || !t.tagName) return false;
+    var tag = t.tagName.toUpperCase();
+    return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || t.isContentEditable === true;
+  }
+  /* ---------- where the page takes you ----------
+     Same offset and same focus behaviour as the anchored-scroll handler above,
+     plus a ring that says "this is the one the search sent you to". */
+  var flashEl = null, flashTimer = 0;
+  function flash(el) {
+    if (flashEl && flashEl !== el) flashEl.classList.remove('is-flash');
+    if (!el) return;
+    flashEl = el;
+    el.classList.add('is-flash');
+    window.clearTimeout(flashTimer);
+    flashTimer = window.setTimeout(function () {
+      el.classList.remove('is-flash');
+      if (flashEl === el) flashEl = null;
+    }, 1600);
+  }
+  function goto(el) {
+    if (!el) return;
+    setNav(false);
+    var box = el.getBoundingClientRect();
+    var top = box.top + window.scrollY - 78;
+    window.scrollTo({ top: top > 0 ? top : 0, behavior: motionOn ? 'smooth' : 'auto' });
+    /* a panel is already tabbable; only things that were not focusable borrow a -1 */
+    if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '-1');
+    el.focus({ preventScroll: true });
+    flash(el);
+  }
+
+  /* reset the zonal board through its own controls, so a hidden host cannot be
+     searched to and then left invisible */
+  function clearZonal() {
+    if (zQ && zQ.value) {
+      zQ.value = '';
+      try { zQ.dispatchEvent(new Event('input')); } catch (e) {}
+    }
+    var all = zFiltersEl ? zFiltersEl.querySelector('.filt[data-zone="All"]') : null;
+    if (all && all.getAttribute('aria-pressed') === 'false') all.click();
+  }
+
+  /* ---------- command palette ----------
+     One keyboard surface over content the page already ships: the eight sections
+     from the rail, the five lanes, every programme entry that has a title, the
+     three featured challenges, the five Fest OS modules, the fourteen host
+     campuses and the actions the buttons on the page already perform. The index
+     is read from the live DOM at boot, so it cannot drift out of date with the
+     copy, and rows are built from text nodes and <mark> only — a headline from
+     the page can never be read back as markup. */
+  var cmdk = document.getElementById('cmdk');
+  var cmdkBtn = document.querySelector('[data-cmdk-open]');
+  var cmdkQ = document.querySelector('[data-cmdk-q]');
+  var cmdkList = document.querySelector('[data-cmdk-list]');
+  var cmdkMeta = document.querySelector('[data-cmdk-meta]');
+  var cmdkNone = document.querySelector('[data-cmdk-none]');
+  var CMDK_MAX = 14;
+  var cmdkItems = [];
+  var cmdkRows = [];
+  var cmdkSel = -1;
+  var cmdkFrom = null;
+  var cmdkGroups = {};
+
+  /* group, label, the small line under it, the right-hand hint, extra words to
+     search, what running it does, and optionally a state-aware label */
+  function addItem(group, label, kicker, hint, hay, run, dyn) {
+    var shown = String(label || '').trim();
+    if (!shown || typeof run !== 'function') return;
+    cmdkItems.push({
+      g: group,
+      l: shown,
+      k: String(kicker || '').trim(),
+      h: String(hint || '').trim(),
+      run: run,
+      dyn: typeof dyn === 'function' ? dyn : null,
+      p: 0,
+      t: norm(shown),
+      a: norm(group + ' ' + kicker),
+      y: norm(shown + ' ' + kicker + ' ' + hint + ' ' + hay)
+    });
+    if (!(group in cmdkGroups)) cmdkGroups[group] = Object.keys(cmdkGroups).length;
+  }
+
+  (function buildPalette() {
+    /* sections: the rail already names them, and the rail is what a keyboard
+       visitor has seen, so those names are the ones that search well */
+    document.querySelectorAll('.spy a').forEach(function (a) {
+      var href = a.getAttribute('href');
+      var sec = href && href.length > 1 ? document.querySelector(href) : null;
+      if (!sec) return;
+      var head = sec.querySelector('h1, h2');
+      var name = txt(a).trim();
+      addItem('Sections', name, 'Section', short(txt(head), 6),
+        'page ' + txt(head) + ' ' + name + ' ' + (sec.className || ''), function () { goto(sec); });
+      cmdkItems[cmdkItems.length - 1].p = 1;
+    });
+
+    /* the five lanes and the five platform modules both live in a tablist, so
+       running one is a click on the page's own tab */
+    function laneRun(tab) {
+      return function () {
+        tab.click();
+        var panel = document.getElementById(tab.getAttribute('aria-controls'));
+        goto(panel || tab);
+      };
+    }
+    document.querySelectorAll('#discover .tabs [role="tab"]').forEach(function (tab) {
+      addItem('Lanes', txt(tab.querySelector('b')), 'Category', txt(tab.querySelector('small')),
+        'lane ' + txt(tab), laneRun(tab));
+      cmdkItems[cmdkItems.length - 1].p = 1;
+    });
+    document.querySelectorAll('[aria-label="Platform modules"] [role="tab"]').forEach(function (tab) {
+      addItem('Fest OS', txt(tab.querySelector('b')), 'Prototype module', txt(tab.querySelector('small')),
+        'platform os ' + txt(tab) + ' sample data browser only', laneRun(tab));
+    });
+
+    /* every programme card that has a title, with its own lane as the context */
+    document.querySelectorAll('#discover .cards .card').forEach(function (card) {
+      var h = card.querySelector('h4');
+      if (!h) return;
+      var panel = card.closest('[role="tabpanel"]');
+      var laneH = panel ? panel.querySelector('.panel-top h3') : null;
+      var tab = panel && panel.getAttribute('aria-labelledby')
+        ? document.getElementById(panel.getAttribute('aria-labelledby')) : null;
+      var tag = card.querySelector('.card-tag');
+      var prize = card.querySelector('.prize');
+      addItem('Programme', txt(h), txt(laneH), short(txt(prize), 5) || txt(tag),
+        txt(tag) + ' ' + txt(laneH) + ' ' + txt(card), function () {
+          if (tab) tab.click();
+          goto(card);
+        });
+    });
+
+    /* the three Pushpak rounds are not cards, so they have no Add to plan button;
+       they are still the loudest thing on the page and belong in the index */
+    document.querySelectorAll('.feat-list li').forEach(function (li) {
+      var h = li.querySelector('h4');
+      if (!h) return;
+      var num = li.querySelector('span');
+      addItem('Featured', txt(h), 'Pushpak Grand Challenge', short(txt(li.querySelector('p')), 5),
+        'drone pushpak funded ' + txt(li), function () { goto(li); });
+    });
+
+    document.querySelectorAll('[data-z-list] .z-cell').forEach(function (cell) {
+      var city = cell.querySelector('b');
+      var who = cell.querySelector('.z-host');
+      var when = cell.querySelector('.z-when');
+      if (!city || !who || !when) return;
+      addItem('Host campuses', txt(city), txt(who), txt(when) + ' \u00b7 ' + (cell.dataset.zone || ''),
+        txt(who) + ' ' + (cell.dataset.zone || '') + ' zonal campus', function () {
+          clearZonal();
+          goto(cell);
+        });
+    });
+
+    /* the actions are the buttons the page already has, reached from the keyboard.
+       None of them is pinned: an empty search box shows the map of the page, not
+       its whole menu — the placeholder and the meta line both name "action", so
+       typing "print" or "share" is how these are found. */
+    var acts = [
+      ['Copy shortlist as text', 'Plain text for a chat', function () { copyPlan(); }],
+      ['Copy share link', 'A link that carries your picks', function () { sharePlan(); }],
+      ['Download shortlist CSV', 'techfest-plan.csv', function () { downloadPlan(); }],
+      ['Print shortlist', 'The one-page paper plan', function () { printPlan(); }],
+      ['Show my shortlist', 'The panel at the end of the page', function () { if (planBox) goto(planBox); }],
+      ['Clear shortlist', 'Remove every pick on this device', function () { if (planClear) planClear.click(); }],
+      ['Match me to events', 'The interest picker in Discover', function () { if (matchBox) goto(matchBox); }],
+      ['Show all fourteen hosts', 'Reset the zonal board', function () { clearZonal(); if (zList) goto(zList); }]
+    ];
+    acts.forEach(function (a) {
+      if (a[0].indexOf('shortlist') > -1 && !planBox) return;
+      addItem('Actions', a[0], a[1], 'Runs the button on the page', a[0] + ' ' + a[1], a[2]);
+    });
+    if (motionBtn) {
+      addItem('Actions', 'Toggle motion', 'Animation, parallax, reveal', 'Runs the button on the page',
+        'motion animation parallax reduce motion on off', function () { motionBtn.click(); },
+        function () { return motionOn ? 'Turn motion off' : 'Turn motion on'; });
+    }
+    if (soundBtn) {
+      /* the bed under this score is literally called a drone, but a visitor who
+         types "drone" here means the UAV challenges, not the ambience */
+      addItem('Actions', 'Toggle ambience', 'Generative score, three levels', 'Runs the button on the page',
+        'sound audio music ambience on off', function () { soundBtn.click(); },
+        function () { return soundOn ? 'Turn ambience off' : 'Turn ambience on'; });
+    }
+  })();
+
+  function cmdkScore(item, toks) {
+    var total = 0;
+    for (var i = 0; i < toks.length; i++) {
+      var w = toks[i];
+      var at = item.y.indexOf(w);
+      if (at < 0) return -1;
+      /* where the match came from matters more than how many there are: a title
+         hit should outrank a hit buried in the card copy */
+      var s = item.t.indexOf(w) > -1 ? 60 : (item.a.indexOf(w) > -1 ? 40 : 22);
+      if (at === 0 || item.y.charAt(at - 1) === ' ') s += 8;
+      total += s;
+    }
+    return total;
+  }
+
+  /* the query echo: first hit per token, merged where they overlap, emitted as
+     text nodes and <mark> elements so nothing is ever parsed as HTML */
+  function cmdkMark(host, label, toks) {
+    var low = label.toLowerCase(), ranges = [], i;
+    for (i = 0; i < toks.length; i++) {
+      var at = low.indexOf(toks[i]);
+      if (at > -1) ranges.push([at, at + toks[i].length]);
+    }
+    if (!ranges.length) {
+      host.appendChild(document.createTextNode(label));
+      return;
+    }
+    ranges.sort(function (a, b) { return a[0] - b[0]; });
+    var merged = [], cur = ranges[0];
+    for (i = 1; i < ranges.length; i++) {
+      if (ranges[i][0] <= cur[1]) { if (ranges[i][1] > cur[1]) cur[1] = ranges[i][1]; }
+      else { merged.push(cur); cur = ranges[i]; }
+    }
+    merged.push(cur);
+    var pos = 0;
+    for (i = 0; i < merged.length; i++) {
+      if (merged[i][0] > pos) host.appendChild(document.createTextNode(label.slice(pos, merged[i][0])));
+      var m = document.createElement('mark');
+      m.textContent = label.slice(merged[i][0], merged[i][1]);
+      host.appendChild(m);
+      pos = merged[i][1];
+    }
+    if (pos < label.length) host.appendChild(document.createTextNode(label.slice(pos)));
+  }
+
+  function cmdkTokens() {
+    var parts = norm(cmdkQ ? cmdkQ.value : '').split(' '), out = [];
+    for (var i = 0; i < parts.length; i++) if (parts[i]) out.push(parts[i]);
+    return out;
+  }
+
+  function cmdkRender() {
+    if (!cmdkList) return;
+    var toks = cmdkTokens();
+    var hits = [];
+    cmdkItems.forEach(function (item, i) {
+      var s = toks.length ? cmdkScore(item, toks) : (item.p ? 1 : -1);
+      if (s > -1) hits.push({ i: i, s: s });
+    });
+    hits.sort(function (a, b) { return b.s - a.s || a.i - b.i; });
+    var top = hits.slice(0, CMDK_MAX);
+    /* ranked by score, then laid out by group, so the list reads as sections /
+       lanes / programme / actions rather than as a bar chart */
+    top.sort(function (a, b) {
+      var ga = cmdkGroups[cmdkItems[a.i].g], gb = cmdkGroups[cmdkItems[b.i].g];
+      return ga !== gb ? ga - gb : (b.s - a.s || a.i - b.i);
+    });
+
+    cmdkList.textContent = '';
+    cmdkRows = [];
+    var lastG = '';
+    top.forEach(function (hit, n) {
+      var item = cmdkItems[hit.i];
+      if (item.g !== lastG) {
+        var gh = document.createElement('li');
+        gh.className = 'cmdk-grp';
+        gh.setAttribute('role', 'presentation');
+        gh.textContent = item.g;
+        cmdkList.appendChild(gh);
+        lastG = item.g;
+      }
+      var li = document.createElement('li');
+      li.className = 'cmdk-opt';
+      li.id = 'cmdk-o-' + n;
+      li.setAttribute('role', 'option');
+      li.setAttribute('aria-selected', 'false');
+      var main = document.createElement('div');
+      main.className = 'cmdk-main';
+      var l = document.createElement('div');
+      l.className = 'cmdk-l';
+      cmdkMark(l, item.dyn ? item.dyn() : item.l, toks);
+      var g = document.createElement('div');
+      g.className = 'cmdk-o-g';
+      g.textContent = item.k;
+      main.appendChild(l);
+      main.appendChild(g);
+      var hint = document.createElement('div');
+      hint.className = 'cmdk-h';
+      hint.textContent = item.h;
+      li.appendChild(main);
+      li.appendChild(hint);
+      (function (index) {
+        li.addEventListener('click', function () { cmdkRun(index); });
+      })(n);
+      cmdkList.appendChild(li);
+      cmdkRows.push({ li: li, item: item });
+    });
+
+    if (cmdkMeta) {
+      cmdkMeta.textContent = !toks.length
+        ? 'Jump to a section, a lane, an event, a campus or an action'
+        : cmdkRows.length + ' of ' + hits.length + (hits.length === 1 ? ' match' : ' matches') + ' on this page';
+    }
+    if (cmdkNone) cmdkNone.hidden = hits.length > 0 || !toks.length;
+    cmdkSetSel(0);
+  }
+
+  function cmdkSetSel(i) {
+    if (cmdkRows.length) i = ((i % cmdkRows.length) + cmdkRows.length) % cmdkRows.length;
+    else i = -1;
+    cmdkSel = i;
+    cmdkRows.forEach(function (row, n) {
+      var on = n === i;
+      row.li.classList.toggle('is-sel', on);
+      row.li.setAttribute('aria-selected', String(on));
+    });
+    if (!cmdkQ) return;
+    cmdkQ.setAttribute('aria-expanded', String(cmdkRows.length > 0));
+    if (i > -1) {
+      cmdkQ.setAttribute('aria-activedescendant', cmdkRows[i].li.id);
+      if (cmdkRows[i].li.scrollIntoView) cmdkRows[i].li.scrollIntoView({ block: 'nearest' });
+    } else {
+      cmdkQ.removeAttribute('aria-activedescendant');
+    }
+  }
+
+  function cmdkRun(i) {
+    var row = cmdkRows[i];
+    if (!row) return;
+    var run = row.item.run;
+    cmdkHide();
+    /* let the overlay go before the page scrolls, and stay inside the same user
+       activation so a toggle here can still start the audio context */
+    window.setTimeout(run, motionOn ? 120 : 0);
+  }
+
+  function cmdkShow() {
+    if (!cmdk || !cmdk.hidden) return;
+    cmdkFrom = document.activeElement;
+    cmdk.hidden = false;
+    root.classList.add('cmdk-on');
+    if (cmdkBtn) cmdkBtn.setAttribute('aria-expanded', 'true');
+    setNav(false);
+    cmdkRender();
+    if (cmdkQ) {
+      cmdkQ.focus();
+      if (cmdkQ.select) cmdkQ.select();
+    }
+  }
+
+  function cmdkHide() {
+    if (!cmdk || cmdk.hidden) return;
+    cmdk.hidden = true;
+    root.classList.remove('cmdk-on');
+    if (cmdkBtn) cmdkBtn.setAttribute('aria-expanded', 'false');
+    cmdkSel = -1;
+    if (cmdkFrom && cmdkFrom.focus) cmdkFrom.focus();
+    cmdkFrom = null;
+  }
+
+  if (cmdk) {
+    if (cmdkBtn) cmdkBtn.addEventListener('click', cmdkShow);
+    document.querySelectorAll('[data-cmdk-scrim],[data-cmdk-close]').forEach(function (el) {
+      el.addEventListener('click', cmdkHide);
+    });
+    if (cmdkQ) {
+      cmdkQ.addEventListener('input', cmdkRender);
+      cmdkQ.addEventListener('keydown', function (e) {
+        var k = (e.key || '').toLowerCase();
+        if (k === 'arrowdown') { e.preventDefault(); cmdkSetSel(cmdkSel + 1); }
+        else if (k === 'arrowup') { e.preventDefault(); cmdkSetSel(cmdkSel - 1); }
+        else if (k === 'home') { e.preventDefault(); cmdkSetSel(0); }
+        else if (k === 'end') { e.preventDefault(); cmdkSetSel(cmdkRows.length - 1); }
+        else if (k === 'enter') { e.preventDefault(); cmdkRun(cmdkSel); }
+      });
+    }
+    /* Ctrl/Cmd+K from anywhere; "/" only when the visitor is not already typing
+       in a field — the page has eleven of them and none should lose a keystroke */
+    document.addEventListener('keydown', function (e) {
+      var k = (e.key || '').toLowerCase();
+      if ((e.ctrlKey || e.metaKey) && k === 'k') {
+        e.preventDefault();
+        if (cmdk.hidden) cmdkShow(); else cmdkHide();
+        return;
+      }
+      if (cmdk.hidden) {
+        if (k === '/' && !e.ctrlKey && !e.metaKey && !e.altKey &&
+          !isTyping(e.target) && !isTyping(document.activeElement)) {
+          e.preventDefault();
+          cmdkShow();
+        }
+        return;
+      }
+      if (k === 'escape') { e.preventDefault(); cmdkHide(); return; }
+      /* the modal keeps its own focus: two controls live inside the box */
+      if (k === 'tab') {
+        var f = cmdk.querySelectorAll('.cmdk-box input, .cmdk-box button');
+        if (!f.length) return;
+        var first = f[0], last = f[f.length - 1];
+        if (e.shiftKey && (document.activeElement === first || document.activeElement === cmdk)) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    });
+  }
+
+  /* ---------- interest matcher ----------
+     Five lanes is a lot to read in a row, so this screens the same 17 cards and
+     the three featured challenges by what a visitor came to do. Every word below
+     appears in the copy on this page — the lists are the page's own vocabulary,
+     not a taxonomy invented here — and the ranking runs against the DOM at boot,
+     so a headline that changes changes the results too. */
+  var matchBox = document.querySelector('[data-match]');
+  var chipsEl = document.querySelector('[data-match-chips]');
+  var matchMeta = document.querySelector('[data-match-meta]');
+  var matchList = document.querySelector('[data-match-list]');
+  var matchReset = document.querySelector('[data-match-reset]');
+  var MATCH_TOP = 6;
+  var INTERESTS = [
+    ['AI & agents', ['ai', 'agentic', 'agent', 'model', 'reasoning', 'prompt', 'machine', 'learning', 'neural', 'context', 'data', 'llm']],
+    ['Robotics', ['robot', 'robotics', 'bot', 'hardware', 'sensor', 'ros', 'autonomous', 'arm', 'battery', 'wireless', 'machine', 'embedded']],
+    ['Drones', ['drone', 'drones', 'uav', 'bvlos', 'swarm', 'rotor', 'propulsion', 'flight', 'aero', 'pushpak', 'cycloprop', 'meity']],
+    ['Code & build', ['code', 'codebase', 'codebases', 'software', 'build', 'program', 'programming', 'defect', 'api', 'framework', 'stack', 'develop']],
+    ['Security', ['security', 'cybersecurity', 'ethical', 'hacking', 'exploit', 'vulnerab', 'ctf', 'intrusion', 'forensic', 'network', 'guardrail', 'safety']],
+    ['Quant & finance', ['quant', 'trading', 'trade', 'finance', 'financial', 'probability', 'market', 'business', 'algorithmic', 'strategy', 'investing', 'compliance', 'signal', 'signals']],
+    ['Design', ['design', 'ui', 'ux', 'user', 'research', 'architecture', 'prototype', 'prototypes', 'figma', 'visual', 'creative']],
+    ['Workshops', ['workshop', 'workshops', 'training', 'certificate', 'certificates', 'early bird', 'batch', 'combo', 'combos', 'booking', 'taught']],
+    ['On campus', ['campus', 'expo', 'techexpo', 'exhibition', 'exhibitions', 'pavilion', 'pavilions', 'showcase', 'showcases', 'keynote', 'keynotes', 'lecture', 'lectures', 'convocation', 'arena', 'robowars', 'ozone', 'technoholix', 'ride', 'rides', 'game', 'games', 'stage', 'fairground', 'hall', 'talk', 'talks']]
+  ];
+  var mCorpus = [];
+  var mOn = [];
+  var mFocusKey = null;
+
+  (function readCorpus() {
+    if (!matchList) return;
+    document.querySelectorAll('#discover .cards .card').forEach(function (card) {
+      var h = card.querySelector('h4');
+      if (!h) return;
+      var panel = card.closest('[role="tabpanel"]');
+      var laneH = panel ? panel.querySelector('.panel-top h3') : null;
+      var tab = panel && panel.getAttribute('aria-labelledby')
+        ? document.getElementById(panel.getAttribute('aria-labelledby')) : null;
+      var tag = card.querySelector('.card-tag');
+      var pick = card.querySelector('.pick');
+      mCorpus.push({
+        title: txt(h).trim(),
+        lane: txt(laneH).trim(),
+        tag: txt(tag).trim(),
+        ti: ' ' + norm(txt(h)) + ' ',
+        /* the card's own copy plus its tag and lane. Not the lane's intro, which
+           every card in the lane would inherit: one mention of drones in the
+           Competitions header would light up all five of its cards */
+        hay: ' ' + norm(txt(h) + ' ' + txt(tag) + ' ' + txt(laneH) + ' ' + txt(card)) + ' ',
+        slug: pick ? pick.dataset.slug : '',
+        pick: pick,
+        reveal: function () {
+          if (tab) tab.click();
+          goto(card);
+        }
+      });
+    });
+    document.querySelectorAll('.feat-list li').forEach(function (li) {
+      var h = li.querySelector('h4');
+      if (!h) return;
+      mCorpus.push({
+        title: txt(h).trim(),
+        lane: 'Pushpak Grand Challenge',
+        tag: 'Featured',
+        ti: ' ' + norm(txt(h)) + ' ',
+        hay: ' ' + norm(txt(li) + ' pushpak drone challenge funded') + ' ',
+        slug: '',
+        pick: null,
+        reveal: function () { goto(li); }
+      });
+    });
+    mCorpus.forEach(function (row, i) { row.i = i; });
+  })();
+
+  function mCount(words) {
+    var n = 0;
+    mCorpus.forEach(function (row) {
+      for (var w = 0; w < words.length; w++) {
+        if (row.hay.indexOf(' ' + words[w]) > -1) { n++; return; }
+      }
+    });
+    return n;
+  }
+
+  function buildChips() {
+    if (!chipsEl) return;
+    chipsEl.textContent = '';
+    INTERESTS.forEach(function (it, i) {
+      mOn[i] = false;
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'chip';
+      btn.setAttribute('aria-pressed', 'false');
+      var name = document.createElement('span');
+      name.textContent = it[0];
+      var c = document.createElement('span');
+      c.className = 'chip-c';
+      c.textContent = String(mCount(it[1]));
+      btn.appendChild(name);
+      btn.appendChild(c);
+      btn.addEventListener('click', function () {
+        mOn[i] = !mOn[i];
+        btn.setAttribute('aria-pressed', String(mOn[i]));
+        renderMatch();
+      });
+      chipsEl.appendChild(btn);
+    });
+  }
+
+  function renderMatch() {
+    if (!matchList || !matchMeta) return;
+    var chosen = [];
+    INTERESTS.forEach(function (it, i) { if (mOn[i]) chosen.push(it); });
+    chipsEl && chipsEl.querySelectorAll('.chip').forEach(function (btn, i) {
+      btn.setAttribute('aria-pressed', String(!!mOn[i]));
+    });
+    matchList.textContent = '';
+
+    if (!chosen.length) {
+      matchMeta.textContent = mCorpus.length
+        ? 'Choose one or more interests.'
+        : 'The matcher needs the programme cards above, and they are not on this page.';
+      return;
+    }
+
+    var scored = [];
+    mCorpus.forEach(function (row) {
+      var hits = 0, names = [];
+      chosen.forEach(function (it) {
+        var n = 0;
+        for (var w = 0; w < it[1].length; w++) {
+          var word = ' ' + it[1][w];
+          /* a title hit counts twice: coming "for the drone event" should beat a
+             card that only mentions drones in its third line of copy */
+          if (row.hay.indexOf(word) > -1) n += row.ti.indexOf(word) > -1 ? 2 : 1;
+        }
+        if (n > 0) { hits += n; names.push(it[0]); }
+      });
+      if (hits) scored.push({ row: row, s: hits, names: names });
+    });
+    scored.sort(function (a, b) { return b.s - a.s || a.row.i - b.row.i; });
+
+    var top = scored.slice(0, MATCH_TOP);
+    matchMeta.textContent = '';
+    var b = document.createElement('b');
+    b.textContent = String(top.length);
+    matchMeta.appendChild(b);
+    matchMeta.appendChild(document.createTextNode(
+      (scored.length > top.length ? ' shown of ' : ' of ') + scored.length +
+      (scored.length === 1 ? ' match' : ' matches') + ' \u00b7 ' +
+      chosen.map(function (it) { return it[0]; }).join(', ')
+    ));
+
+    top.forEach(function (hit, n) {
+      var row = hit.row;
+      var li = document.createElement('li');
+      li.className = 'mrow';
+      var rank = document.createElement('span');
+      rank.className = 'mrow-n';
+      rank.textContent = ('0' + (n + 1)).slice(-2);
+      var main = document.createElement('div');
+      main.className = 'mrow-main';
+      var t = document.createElement('b');
+      t.className = 'mrow-t';
+      t.textContent = row.title;
+      var w = document.createElement('small');
+      w.className = 'mrow-w';
+      w.textContent = hit.names.join(' \u00b7 ') + ' \u2014 ' +
+        (row.tag && row.tag !== row.lane ? row.lane + ' \u00b7 ' + row.tag : row.lane);
+      main.appendChild(t);
+      main.appendChild(w);
+      var act = document.createElement('div');
+      act.className = 'mrow-act';
+
+      var open = document.createElement('button');
+      open.type = 'button';
+      open.className = 'btn btn-sm btn-ghost';
+      open.textContent = 'Open';
+      open.dataset.mkey = n + ':open';
+      open.addEventListener('click', function () { row.reveal(); });
+      act.appendChild(open);
+
+      /* the row adds to the plan through the card's own button, so a pick made
+         here lands in localStorage, the shortlist panel and the CSV exactly as
+         one made on the card would */
+      if (row.pick) {
+        var add = document.createElement('button');
+        add.type = 'button';
+        add.className = 'btn btn-sm btn-ghost';
+        add.textContent = planIndex(row.slug) > -1 ? 'In your plan' : 'Add to plan';
+        add.dataset.mkey = n + ':add';
+        add.addEventListener('click', function () {
+          mFocusKey = n + ':add';
+          row.pick.click();
+        });
+        act.appendChild(add);
+      }
+
+      li.appendChild(rank);
+      li.appendChild(main);
+      li.appendChild(act);
+      matchList.appendChild(li);
+    });
+
+    if (mFocusKey) {
+      var back = matchList.querySelector('[data-mkey="' + mFocusKey + '"]');
+      mFocusKey = null;
+      if (back) back.focus();
+    }
+  }
+
+  if (matchList && chipsEl) {
+    buildChips();
+    renderMatch();
+    if (matchReset) {
+      matchReset.addEventListener('click', function () {
+        for (var i = 0; i < mOn.length; i++) mOn[i] = false;
+        renderMatch();
+        var first = chipsEl.querySelector('.chip');
+        if (first) first.focus();
+      });
+    }
+  } else if (matchBox) {
+    matchBox.hidden = true;
+  }
+
+  /* ---------- the fourth exit: a link, not a file ----------
+     Copy as text is for a chat, CSV is for a sheet, print is for a noticeboard —
+     this one is for a friend. The shortlist rides in the address as a compact
+     array of [category, title] pairs, so there is no server to write to and no
+     account to open. Nothing but the picks you already made leaves the device,
+     and the receiver reads it back into their own shortlist. */
+  var planShare = document.querySelector('[data-plan-share]');
+  var SHARE_MARK = '#tfplan=';
+
+  function shareUrl() {
+    var rows = plan.map(function (i) { return [i.k, i.t]; });
+    return location.href.split('#')[0] + SHARE_MARK + encodeURIComponent(JSON.stringify(rows));
+  }
+  function sayLink(msg, url) {
+    if (!planStatus) return;
+    planStatus.textContent = '';
+    window.setTimeout(function () {
+      planStatus.textContent = msg + ' ';
+      var a = document.createElement('a');
+      a.href = url;
+      a.textContent = 'Open it';
+      planStatus.appendChild(a);
+      planStatus.appendChild(document.createTextNode(
+        ' The picks ride in the address, so it opens on any device.'));
+    }, 40);
+  }
+  function sharePlan() {
+    if (!planBox) return;
+    if (!plan.length) {
+      say('Nothing to share yet. Add something to your shortlist first.');
+      return;
+    }
+    var url = shareUrl();
+    function done(ok) {
+      sayLink(ok ? 'Copied a link to ' + plan.length + (plan.length === 1 ? ' item.' : ' items.')
+        : 'The browser refused the clipboard, so here is the link anyway.', url);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(function () { done(true); }, function () { done(legacyCopy(url)); });
+    } else {
+      done(legacyCopy(url));
+    }
+  }
+
+  /* Reading a link is the one place this page takes a list from outside, so the
+     shape is checked rather than trusted: an array of two-string pairs, bounded
+     lengths, a cap on rows, and one entry per slug. Titles go into the DOM as
+     textContent, never as markup. */
+  function shareFromHash() {
+    var h = location.hash || '';
+    if (h.indexOf(SHARE_MARK) !== 0) return null;
+    var json;
+    try { json = decodeURIComponent(h.slice(SHARE_MARK.length)); } catch (e) { return null; }
+    var data;
+    try { data = JSON.parse(json); } catch (e) { return null; }
+    if (!Array.isArray(data)) return null;
+    var out = [], seen = {};
+    for (var i = 0; i < data.length && out.length < 30; i++) {
+      var row = data[i];
+      if (!Array.isArray(row) || row.length !== 2) continue;
+      if (typeof row[0] !== 'string' || typeof row[1] !== 'string') continue;
+      var k = row[0].replace(/\s+/g, ' ').trim().slice(0, 40);
+      var t = row[1].replace(/\s+/g, ' ').trim().slice(0, 120);
+      if (!k || !t) continue;
+      var s = planSlug(k, t);
+      if (seen[s]) continue;
+      seen[s] = 1;
+      out.push({ s: s, k: k, t: t });
+    }
+    return out;
+  }
+
+  function consumeShare() {
+    if (!planBox) return;
+    var items = shareFromHash();
+    if (!items) return;
+    var before = plan.length;
+    items.forEach(function (item) {
+      if (planIndex(item.s) < 0 && plan.length < 60) plan.push(item);
+    });
+    var added = plan.length - before;
+    storePlan(); syncPicks(); renderPlan(); syncMatchRows();
+    /* the hash has done its job; the address bar should not keep a plan the
+       visitor has already merged into their own */
+    try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+    window.setTimeout(function () {
+      say(added
+        ? 'Added ' + added + (added === 1 ? ' item' : ' items') + ' from a shared plan, saved on this device.'
+        : 'That shared plan holds nothing your shortlist does not already have.');
+      if (added) goto(planBox);
+    }, 80);
+  }
+
+  /* setPlan and the clear button both call this, so a row that says "Add to plan"
+     never lies after a change made somewhere else on the page */
+  function syncMatchRows() {
+    if (matchList && mCorpus.length) renderMatch();
+  }
+
+  if (planShare) planShare.addEventListener('click', sharePlan);
+  window.addEventListener('hashchange', consumeShare);
+  consumeShare();
 
   var yr = document.getElementById('yr');
   if (yr) yr.textContent = String(new Date().getFullYear());

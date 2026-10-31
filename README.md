@@ -24,7 +24,7 @@ index.html          markup + all copy
 css/styles.css      design tokens, liquid glass, layout, motion, print sheet (Space Grotesk, #0A0A0C / #FFD700)
 js/main.js          category tabs, motion toggle, scroll reveal + section rail, mobile nav,
                     the searchable zonal board, pointer spotlight, shortlist and its
-                    export, ambience
+                    four exports, the Ctrl+K palette, the interest matcher, ambience
 js/platform.js      the Fest OS modules: crew, live day, judging, engage, payouts
 manifest.webmanifest PWA manifest (standalone display, #0A0A0C theme, three icon sizes)
 assets/img          generated 2D artwork (webp), favicon.svg, the 1200x630 og-farside.jpg
@@ -206,6 +206,69 @@ The zone labels are this page's own reading of where each host sits geographical
 competitions page does not group them that way — which is said out loud in the `.z-aside` under the
 board rather than left for the visitor to assume.
 
+## Search the page you are on
+
+One page, eight sections, seventeen cards, fourteen host campuses and six prototype modules: that is
+too much to scroll for, and there is no server to ask. So `Ctrl`/`Cmd`+K (or `/`, or the magnifier in
+the header) opens a palette that searches **the page itself**.
+
+The index is built from the live DOM at boot, not from a list written next to the feature. It reads
+the eight rail links, the five Discover lanes, the six Fest OS modules, the seventeen programme cards,
+the three featured Pushpak rounds, the fourteen zonal cells and the actions the page's own buttons
+already perform — copy, share, download, print, clear, jump to the matcher, toggle motion, toggle
+ambience. A headline that gets rewritten reindexes itself, and a result cannot point at something
+that is not on the page. Nothing is fetched, nothing is invented, and the palette adds no new place
+to trust.
+
+Ranking is deliberately boring: 60 for a hit in the title, 40 for the group or kicker, 22 for the
+body, plus 8 when a token starts a word, and every token has to land somewhere. Fifteen rows would
+turn into a wall, so results are cut to fourteen and then re-sorted by group, which keeps a
+"Programme" cluster reading as a list instead of a score scatter. With an empty query only the
+sections and the lanes are pinned, so opening the palette shows a thirteen-row map of the page rather
+than an arbitrary sample of it.
+
+Choosing a result closes the dialog and then does the thing the page would have done anyway: click
+the lane tab that owns a card, clear the zonal search first when the target is a host cell so it
+cannot be filtered out from under the visitor, scroll with the same 78px header offset as the anchor
+handler, focus the target and ring it with `.is-flash` for 1.6s. Motion off means the same behaviour
+without the smooth scroll or the hand-off delay.
+
+It is a real combobox: `role="combobox"` and `aria-expanded` on the field, `role="listbox"` with
+`aria-activedescendant` over the rows, arrows that wrap at both ends, a focus trap limited to the two
+controls inside the box, and focus handed back on Escape. The result count is a `role="status"` line
+and also the field's `aria-describedby`, so a screen reader hears "7 of 7 matches on this page" as
+you type. `/` does not fire while the cursor is in any of the page's eleven text fields, and the
+header trigger carries `Search this page` as its accessible name even though the label is clipped.
+
+The trigger is icon-only. A labelled trigger plus the `Ctrl K` chip needed room the header does not
+have: the nav appears at 1081px while the track stops growing at 1240px, so that band squeezes six
+links and four controls into a fixed row — a measured 93-104px of sideways page. The label is clipped
+rather than removed, and the chip comes back above 1660px where there is room for it. Like the
+matcher, the trigger and the panel stay `display:none` until JavaScript puts `js-on` on `<html>`: a
+search box that cannot fill itself is worse than no search box.
+
+## Match me to the programme
+
+Five lanes is still a lot to read in a row, and "which of these is for me" is the question a lane
+picker cannot answer. The matcher under the lanes screens the same seventeen cards and the three
+featured rounds by what a visitor says they came for, then hands each row straight to the shortlist.
+
+Nine interests: AI & agents, Robotics, Drones, Code & build, Security, Quant & finance, Design,
+Workshops, On campus. Every word in those lists already appears in the copy on this page, so the
+taxonomy is the page's own vocabulary rather than a set of categories invented next to it — the same
+rule the zone labels follow. Each chip carries a coverage count, so the size of a choice is visible
+before it is made.
+
+Scoring reads `title + tag + lane + card text` for every row, weights a title hit double a body hit,
+and requires at least one. The lane's own `.panel-top` intro is excluded on purpose: the Competitions
+blurb mentions drones, and leaving it in scored every competition card as a drone match. A row shows
+its rank, its title, the interest names that actually fired, and the lane plus its own tag.
+
+Two actions per row. **Open** uses the same jump-and-flash path as the palette. **Add to plan** does
+not write to the plan array — it clicks that card's own `.pick` button, so there is still exactly one
+place that decides what a pick is, the toggle under the card stays in sync, and the matcher rebuilds
+when the panel is edited from either end. `Clear interests` returns the list to nothing.
+
 ## Shortlist
 
 A landing page that only links outward has no way to answer "so what would I actually go to?",
@@ -219,10 +282,11 @@ category + title so the same words in two lanes stay distinct. Nothing leaves th
 is no account, and clearing it removes the key entirely. With storage unavailable (private mode,
 locked-down origins) the toggles still work for the visit and simply forget on reload.
 
-A list you cannot hand to anyone is a to-do rather than a plan, so the panel ends in three exits:
-**Copy as text** puts the picks on the clipboard grouped by lane, **Download CSV** writes
-`techfest-plan.csv` from a Blob for a spreadsheet, and **Print plan** puts them on paper (see
-[On paper](#on-paper)). All three read the same in-memory array and none of them sends it anywhere.
+A list you cannot hand to anyone is a to-do rather than a plan, so the panel ends in four exits:
+**Copy as text** puts the picks on the clipboard grouped by lane, **Copy share link** builds a URL
+that carries them ([A link that carries the plan](#a-link-that-carries-the-plan)), **Download CSV**
+writes `techfest-plan.csv` from a Blob for a spreadsheet, and **Print plan** puts them on paper (see
+[On paper](#on-paper)). All four read the same in-memory array and none of them sends it anywhere.
 The `role="status"` line under the panel reports what happened, including the
 refusal path: the asynchronous clipboard API falls back to a hidden textarea and `execCommand`, and
 if even that is blocked it says so instead of claiming a copy.
@@ -259,6 +323,31 @@ screened out stays screened out.
 One expected oddity for an automated audit: the sheet opens with its own `<h1>`, so a heading count
 taken over the raw markup finds two. It is inside a `display:none` subtree on screen and the only
 heading on paper, where the page's own `<h1>` is hidden along with the rest of the body's children.
+
+## A link that carries the plan
+
+Copy, CSV and paper all move a plan out of the browser, and none of them lets the other person start
+from it. The fourth exit puts the picks in the address: `#tfplan=` followed by the same
+`[kind, title]` pairs the panel already holds, JSON-encoded and percent-escaped onto the current URL
+minus any existing hash. Paste it into a chat, open it on a phone, and the shortlist is there.
+
+A hash is the one piece of input this page lets a stranger supply, so it is treated as untrusted
+rather than as a convenience. `shareFromHash()` requires an array whose every entry is a two-string
+pair, slices the fields to 40 and 120 characters, caps the list at thirty items and drops duplicates
+by slug; anything else is ignored. Accepted items are rendered through `createTextNode` and the
+palette's own `<mark>` path, never `innerHTML`, and never used as a selector or a URL. Then the hash
+is stripped with `history.replaceState`, because an address bar that keeps a stale payload invites a
+reload that re-adds everything, and the merged count is reported in the panel's `role="status"` line.
+
+The sender says what happened rather than what it hoped: an empty plan is refused outright ("Nothing
+to share yet"), and when the clipboard is blocked the link is still printed next to an **Open it**
+anchor, with a line saying the browser refused. A shared plan whose items are all already on the
+device says so instead of reporting an import.
+
+Two honest limits. Anyone can hand-write a `#tfplan=` payload naming something that is not on the
+page, and it will appear as a row — it is removable per row and by **Clear all**, but it is the price
+of a link that needs no backend. And the link carries picks, not people: nothing is uploaded, no
+account exists, and a plan shared this way is only as durable as the message it was pasted into.
 
 ## Fest OS
 

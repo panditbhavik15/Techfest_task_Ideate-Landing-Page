@@ -25,7 +25,7 @@
 <link rel="preload" href="assets/img/hero-farside.webp" as="image" fetchpriority="high">
 <link rel="preload" href="assets/fonts/space-grotesk-700.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/fonts/space-grotesk-400.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="css/styles.css?v=29">
+<link rel="stylesheet" href="css/styles.css?v=31">
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"Event","name":"Techfest, IIT Bombay","description":"Asia's largest science and technology festival, run entirely by students on the IIT Bombay campus: competitions, workshops, lectures, exhibitions and entertainment.","url":"https://techfest.org/","eventAttendanceMode":"https://schema.org/OfflineEventAttendanceMode","eventStatus":"https://schema.org/EventScheduled","image":"assets/img/og-farside.jpg","organizer":{"@type":"Organization","name":"Techfest, IIT Bombay","url":"https://techfest.org/"},"location":{"@type":"Place","name":"Indian Institute of Technology Bombay","address":{"@type":"PostalAddress","addressLocality":"Mumbai","addressRegion":"Maharashtra","addressCountry":"IN"}}}
 </script>
@@ -81,6 +81,14 @@
           <circle cx="10" cy="10" r="6.6" fill="none" stroke="currentColor" stroke-width="1.5"/>
           <circle class="m-dot" cx="10" cy="3.4" r="1.9" fill="currentColor"/>
         </svg><span class="motion-lbl">Motion off</span>
+      </button>
+      <button class="cmdk-btn" type="button" data-cmdk-open aria-haspopup="dialog" aria-expanded="false" aria-controls="cmdk" title="Search this page (Ctrl K)">
+        <span class="cmdk-txt">Search this page</span>
+        <svg class="ic" viewBox="0 0 20 20" width="15" height="15" aria-hidden="true" focusable="false">
+          <circle cx="9" cy="9" r="6.1" fill="none" stroke="currentColor" stroke-width="1.6"/>
+          <path d="M13.6 13.6 17.2 17.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+        <kbd class="cmdk-key" aria-hidden="true">Ctrl&nbsp;K</kbd>
       </button>
       <a class="btn btn-gold btn-sm" href="https://techfest.org/" target="_blank" rel="noopener">Register</a>
       <button class="nav-btn" type="button" data-nav-toggle aria-expanded="false" aria-controls="mobile-nav">
@@ -213,7 +221,8 @@
         <h2 class="sec-h">Pick your lane</h2>
         <p class="sec-sub">Every lane has its own entry point on the official site.</p>
         <p class="plan-hint">Tap <b>Add to plan</b> on anything worth doing — picks stay on this
-          device until you copy, print or download them. <a class="txt-link" href="#my-plan">See your shortlist</a></p>
+          device until you copy, share, print or download them. <a class="txt-link" href="#my-plan">See your shortlist</a>
+          or press <kbd class="kbd-inline">Ctrl</kbd>&thinsp;+&thinsp;<kbd class="kbd-inline">K</kbd> to search the whole page.</p>
       </header>
 
       <div class="disc-shell">
@@ -422,6 +431,23 @@
             </ul>
           </div>
         </div>
+      </div>
+
+      <!-- ---------- interest matcher ----------
+           Five lanes is a lot to read linearly, so this screens the same cards by
+           what you actually came to do. The words behind each chip are taken from
+           the copy above, and the ranking runs on this page's own DOM: nothing is
+           fetched, and nothing you click leaves the device. -->
+      <div class="match" data-match>
+        <div class="match-head">
+          <h3 class="match-h">Point me at something</h3>
+          <p class="match-sub">Pick what you came for. Each interest is matched against the
+            programme copy above, so the shortlist you get is made of events on this page.</p>
+        </div>
+        <div class="match-chips" role="group" aria-label="What you want to do" data-match-chips></div>
+        <p class="match-meta" data-match-meta role="status">Choose one or more interests.</p>
+        <ol class="match-list" data-match-list aria-label="Events on this page that match"></ol>
+        <button class="btn btn-sm btn-ghost" type="button" data-match-reset>Clear interests</button>
       </div>
     </div>
   </section>
@@ -1045,6 +1071,7 @@
           <p class="plan-count" data-plan-count aria-live="polite">0 saved</p>
           <div class="plan-act">
             <button class="btn btn-sm btn-ghost" type="button" data-plan-copy>Copy as text</button>
+            <button class="btn btn-sm btn-ghost" type="button" data-plan-share>Copy share link</button>
             <button class="btn btn-sm btn-ghost" type="button" data-plan-csv>Download CSV</button>
             <button class="btn btn-sm btn-ghost" type="button" data-plan-print>Print plan</button>
           </div>
@@ -1173,7 +1200,31 @@
   </div>
 </div>
 
-<script src="js/main.js?v=29"></script>
-<script src="js/platform.js?v=29"></script>
+<!-- ============ COMMAND PALETTE ============
+     One keyboard surface over content the page already holds: the sections, the
+     five lanes, every programme entry, the Fest OS modules, the fourteen host
+     campuses, and the actions the buttons on the page already perform. The index
+     is read from the live DOM at boot, so it cannot drift out of date with the copy. -->
+<div class="cmdk" id="cmdk" data-cmdk hidden>
+  <div class="cmdk-scrim" data-cmdk-scrim></div>
+  <div class="cmdk-box" role="dialog" aria-modal="true" aria-labelledby="cmdk-title">
+    <h2 class="sr-only" id="cmdk-title">Search this page</h2>
+    <div class="cmdk-top">
+      <svg class="cmdk-ic" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true" focusable="false">
+        <circle cx="9" cy="9" r="6.1" fill="none" stroke="currentColor" stroke-width="1.6"/>
+        <path d="M13.6 13.6 17.2 17.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+      <input class="cmdk-q" id="cmdk-q" type="text" data-cmdk-q placeholder="Event, lane, campus or action" aria-label="Search this page" aria-describedby="cmdk-meta" autocomplete="off" spellcheck="false" autocapitalize="off" role="combobox" aria-expanded="false" aria-controls="cmdk-list" aria-autocomplete="list">
+      <button class="cmdk-x" type="button" data-cmdk-close>Close</button>
+    </div>
+    <p class="cmdk-meta" id="cmdk-meta" data-cmdk-meta role="status"></p>
+    <ul class="cmdk-list" id="cmdk-list" data-cmdk-list role="listbox" aria-label="Results"></ul>
+    <p class="cmdk-none" data-cmdk-none hidden>Nothing on this page matches that. Try a lane (workshops), a city (Kochi), or an action (print plan).</p>
+    <p class="cmdk-keys" aria-hidden="true"><kbd>&#8593;</kbd><kbd>&#8595;</kbd> move <span>&middot;</span> <kbd>Enter</kbd> open <span>&middot;</span> <kbd>Esc</kbd> close</p>
+  </div>
+</div>
+
+<script src="js/main.js?v=31"></script>
+<script src="js/platform.js?v=31"></script>
 </body>
 </html>
